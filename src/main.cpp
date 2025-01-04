@@ -38,7 +38,7 @@ pros::Motor flexWheelIntake(5, pros::v5::MotorGears::blue, pros::MotorEncoderUni
 
 pros::Imu imu(12);
 
-pros::Motor armMotor(4, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
+pros::Motor armMotor(3, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
 
 pros::adi::DigitalOut mogo('A');
 pros::adi::DigitalOut doinker('B');
@@ -270,16 +270,16 @@ void initialize() {
             pros::delay(100);
 
 
-            bruh++;
-            if (bruh == 30) {
-                controller.clear();
-            }
-            if (bruh % 5 == 0) {
-                int theta = static_cast<int>(round(chassis.getPose().theta));
-                controller.print(0, 0, "%.1f, %.1f, %i          ", chassis.getPose().x, chassis.getPose().y, (theta % 360));
-            } else if (bruh % 5 == 4) {
-                controller.print(1, 0, "%.0f%% | %.0f", pros::battery::get_capacity(), controller.get_battery_capacity() );
-            }
+            // bruh++;
+            // if (bruh == 30) {
+            //     controller.clear();
+            // }
+            // if (bruh % 5 == 0) {
+            //     int theta = static_cast<int>(round(chassis.getPose().theta));
+            //     controller.print(0, 0, "%.1f, %.1f, %i          ", chassis.getPose().x, chassis.getPose().y, (theta % 360));
+            // } else if (bruh % 5 == 4) {
+            //     controller.print(1, 0, "%.0f%% | %.0f", pros::battery::get_capacity(), controller.get_battery_capacity() );
+            // }
         }
     });
 }
@@ -833,7 +833,7 @@ void autoMoveArm() {
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
         pros::delay(10);
         // Moves the arm to catch the ring
-        armMotor.move_absolute(43 * 5, 250);
+        armMotor.move_absolute(42 * 5, 200);
 
     } else if (armMotorCounter == 1) {
         // Complicated steps to push it down for the next step
@@ -849,7 +849,7 @@ void autoMoveArm() {
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         pros::delay(10);
         armMotor.move_absolute(170*5, 10000);
-        pros::delay(500);
+        pros::delay(550);
         armMotor.move_absolute(0, 500);
         armMotorCounter = -1;
 
