@@ -3,6 +3,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/abstract_motor.hpp"
+#include "pros/llemu.hpp"
 #include "pros/misc.hpp"
 #include "pros/motors.h"
 #include "pros/motors.hpp"
@@ -17,12 +18,12 @@
 
 
 
-int l1 = -20;
-int l2 = -18;
-int l3 = -17;
-int r1 = 10;
-int r2 = 8;
-int r3 = 7;
+int l1 = -16;
+int l2 = -15;
+int l3 = -14;
+int r1 = 17;
+int r2 = 19;
+int r3 = 18;
 
 signed char a = char(l1);
 signed char b = char(l2);
@@ -34,18 +35,20 @@ signed char f = char(r3);
 pros::MotorGroup left_motors({a, b, c}, pros::MotorGearset::blue);
 pros::MotorGroup right_motors({d, e, f}, pros::MotorGearset::blue);
 
-pros::Motor flexWheelIntake(5, pros::v5::MotorGears::blue, pros::MotorEncoderUnits::degrees);
+pros::Motor flexWheelIntake(-12, pros::v5::MotorGears::blue, pros::MotorEncoderUnits::degrees);
 
-pros::Imu imu(12);
+pros::Imu imu(7);
 
 pros::Motor armMotor(3, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
 
 pros::adi::DigitalOut mogo('A');
-pros::adi::DigitalOut doinker('B');
+pros::adi::DigitalOut doinker('G');
 
 pros::Rotation verticalTracking(15);
 
 pros::Rotation horizontalTracking(15);
+pros::Rotation LBtracking(-2);
+
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
@@ -64,22 +67,14 @@ Line 3: Log
 */
 
 
-
-
-
-
-
-
-lemlib::Drivetrain drivetrain(&left_motors,
-                              &right_motors,
-                              11.9,
-                              lemlib::Omniwheel::NEW_275,
-                              400,
-                            6
+lemlib::Drivetrain drivetrain(
+    &left_motors,
+    &right_motors,
+    11.9,
+    lemlib::Omniwheel::NEW_275,
+    400,
+    6
 );
-
-
-
 
 lemlib::ControllerSettings lateral_controller(7, // proportional gain (kP)
                                               0, // integral gain (kI)
@@ -91,9 +86,6 @@ lemlib::ControllerSettings lateral_controller(7, // proportional gain (kP)
                                               500, // large error range timeout, in milliseconds
                                               20 // maximum acceleration (slew)
 );
-
-
-
 
 // angular PID controller
 lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
@@ -107,18 +99,7 @@ lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
                                               0 // maximum acceleration (slew)
 );
 
-
-
-
-
-
-pros::Rotation vs(15);
-
-
 // lemlib::TrackingWheel vertical_tracking_wheel(&vs, lemlib::Omniwheel::NEW_275, -6);
-
-
-
 
 lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
@@ -161,7 +142,8 @@ lemlib::Chassis chassis(drivetrain, // drivetrain settings
 //Bond Liu is an opp and a loser
 int team = 2;
 int auton = 0;
-
+// Intake is a percentage, that means 100 is 127
+int intake = 0; 
 
 std::string autonDisplay[2] = {"left", "right"};
 std::string teamDisplay[3] = {"Red", "Blue", "None"};
@@ -186,6 +168,36 @@ void on_center_button() {
     pros::lcd::print(0, "Team: %s          ", teamDisplay[team]);
 
 
+}
+
+void flexWheelIntakeFunc() {
+    int fwamt = 0;
+    int yesfw = 0;
+    while (true) {
+        // Spin the intake if on
+        int intakespd = intake * 1.27;
+        flexWheelIntake.move(intakespd );
+
+        // Montior for highest speed
+        if (intakespd > 100) {
+            fwamt++; 
+            if (fwamt > 50 && flexWheelIntake.get_actual_velocity() < 25 && yesfw < 200) {
+                pros::lcd::print(5, "Actual velocity: %i",flexWheelIntake.get_actual_velocity());
+                // Move it back then fwd again
+                flexWheelIntake.move(-127);
+                pros::delay(150 + yesfw);
+                fwamt = 20;
+                yesfw += 60;
+            }
+
+        } else {
+            fwamt = 0;
+            if (yesfw > 0) {yesfw--;}
+        }
+
+        // Save resources
+        pros::delay(10);
+    }
 }
 
 
@@ -220,6 +232,8 @@ void initialize() {
 
 
     armMotor.tare_position();
+    LBtracking.reset();
+    LBtracking.reset_position();
 
     // the default rate is 50. however, if you need to change the rate, you
     // can do the following.
@@ -241,6 +255,8 @@ void initialize() {
     pros::lcd::register_btn2_cb(on_right_button);
     controller.clear();
     // thread to for brain screen and position logging
+    LBtracking.set_reversed(true);
+    pros::Task intakeTask(flexWheelIntakeFunc);
     pros::Task screenTask([&]() {
         int bruh = 0;
         while (true) {
@@ -250,36 +266,18 @@ void initialize() {
             pros::lcd::print(4, "Theta: %f", chassis.getPose().theta); // heading
             // log position telemetry
             lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
-           
-           
+            pros::lcd::print(7, "Angle: %i, %i", LBtracking.get_angle()/100,LBtracking.get_position()/100);
 
-
-           
             if (!imu.is_installed()) {
                 imudc = true;
             }
             if (imudc) {
-                           
                 controller.print(2, 0, "IMU Disconnected");
             }
-
-
-
 
             // delay to save resources
             pros::delay(100);
 
-
-            // bruh++;
-            // if (bruh == 30) {
-            //     controller.clear();
-            // }
-            // if (bruh % 5 == 0) {
-            //     int theta = static_cast<int>(round(chassis.getPose().theta));
-            //     controller.print(0, 0, "%.1f, %.1f, %i          ", chassis.getPose().x, chassis.getPose().y, (theta % 360));
-            // } else if (bruh % 5 == 4) {
-            //     controller.print(1, 0, "%.0f%% | %.0f", pros::battery::get_capacity(), controller.get_battery_capacity() );
-            // }
         }
     });
 }
@@ -368,335 +366,6 @@ void competition_initialize() {
 
 
 
-
-
-
-void rightRED() {
-    // Doinker the mogo
-    chassis.moveToPose(2, 38, 10, 1000, {.lead=0.05}, false);
-    doinker.set_value(1);
-    chassis.moveToPoint(0, 15, 1000, {.forwards=false}, false);
-    doinker.set_value(0);
-    pros::delay(400);
-
-
-
-
-    // Move to get the stake
-    chassis.turnToHeading(130, 800);
-    chassis.moveToPoint(-8.1, 28.1, 1000, {.forwards=false, .maxSpeed=70}, false);
-    mogo.set_value(1);
-    pros::delay(200);
-
-
-    // Move to get the 4 rings
-    chassis.moveToPoint(-3, 5.1, 1000);
-    chassis.moveToPoint(20.4, -5, 1000);
-
-
-    doinker.set_value(1);
-
-
-    flexWheelIntake.move(-127);
-
-
-    // pros::delay(200);
-
-
-    chassis.turnToHeading(0, 1000, {.maxSpeed=70}, false);
-
-
-    doinker.set_value(0);
-
-
-    chassis.turnToHeading(120, 500);
-    // chassis.resetLocalPosition();
-
-
-    chassis.moveToPoint(30, -4, 3000, {}, false);
-
-
-    chassis.resetLocalPosition();
-    chassis.moveToPoint(-4, 0, 1000);
-
-
-    // flexWheelIntake.move(0);
-
-
-}
-
-
-void leftRED() {
-    mogo.set_value(0);
-
-
-    // Score alliance goal
-    chassis.moveToPoint(0, -11, 700, {.forwards=false}, true);
-    chassis.turnToHeading(90, 500, {}, true);
-    chassis.moveToPoint(-3, -11, 500);
-    flexWheelIntake.move(-127);
-    pros::delay(600);
-
-
-    flexWheelIntake.move(0);
-
-
-    // // try to score the ring
-    // chassis.moveToPose(-18, -15, -120, 2000, {.lead=0.7}, false);
-
-
-    // // Reset for next
-    chassis.moveToPoint(0, -11, 500);
-    chassis.turnToHeading(0, 400, {}, false);
-
-
-    // Move to get the stacked ring
-    flexWheelIntake.move(-80);
-    chassis.moveToPose(26, 36, 65, 2000, {.lead=0.3, .minSpeed=0}, false);
-
-
-    // // Wait a bit to get it in but dont score
-    pros::delay(200);
-    flexWheelIntake.move_relative(410, -100);
-
-
-    flexWheelIntake.move(-10);
-
-
-    // pros::delay(10000000);
-
-
-
-
-    // // move to the stake and get it
-    chassis.moveToPoint(25, 15, 1700, {.forwards=false, .maxSpeed=100}, false);
-    mogo.set_value(1);
-    pros::delay(200);
-
-
-    // // score and turn to the middle rings
-    flexWheelIntake.move(-127);
-    chassis.turnToHeading(45, 300, {}, false);
-
-
-    chassis.resetLocalPosition();
-    // chassis.moveToPose(19, 26, 0, 3000, {.lead=0.4}, false);
-   
-    // try to score the blue ring in the middle of the field
-
-
-
-
-    chassis.moveToPoint(-4, -16, 3000, {.forwards=false, .maxSpeed=50});
-    chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
-}
-
-
-void leftBLUEmogorush() {
-    chassis.moveToPose(2, 37, 10, 1100, {.lead=0.05}, false);
-    doinker.set_value(1);
-    chassis.moveToPoint(0, 6, 1000, {.forwards=false}, false);
-    doinker.set_value(0);
-    pros::delay(100);
-    chassis.turnToHeading(-120, 800);
-
-
-    chassis.moveToPoint(32, 26, 1000, {.forwards=false, .maxSpeed=70}, false);
-    mogo.set_value(1);
-    pros::delay(500);
-
-
-    chassis.moveToPoint(-4, -7.7, 2000);
-
-
-    doinker.set_value(1);
-
-
-    flexWheelIntake.move(-127);
-
-
-    // chassis.turnToHeading(-300, 1000);
-
-
-    chassis.moveToPose(16, -3, -270, 2000, {}, false);
-    // chassis.moveToPoint(19, 2, 1200, {.maxSpeed=80}, false);
-    // doinker.set_value(0);
-
-
-    chassis.resetLocalPosition();
-    flexWheelIntake.move(0);
-
-
-    chassis.moveToPoint(-8, 0, 1000, {.forwards=false}, false);
-
-
-
-
-
-
-}
-
-
-void leftBLUEnormal() {
-    chassis.moveToPoint(0, -30, 1900, {.forwards=false}, true);
-    chassis.turnToHeading(35, 250);
-    chassis.moveToPoint(-8, -45.5, 1000, {.forwards=false}, false);
-
-
-    mogo.set_value(1);
-
-
-    flexWheelIntake.move(-127);
-    pros::delay(500);
-
-
-    chassis.moveToPoint(-12, -22, 2000, {.maxSpeed=100}, false);
-
-
-    pros::delay(200);
-
-
-    chassis.moveToPoint(-8, -24, 1000, {.forwards=false}, false);
-
-
-    pros::delay(300);
-
-
-    mogo.set_value(0);
-
-
-    flexWheelIntake.move(127);
-    chassis.moveToPoint(-14, -20, 1000, {.maxSpeed=100});
-    chassis.turnToHeading(65, 1000, {}, false);
-
-
-    chassis.resetLocalPosition();
-    flexWheelIntake.move(0);
-
-
-    chassis.moveToPoint(-24, -12, 1000, {.forwards=false}, false);
-
-
-    mogo.set_value(1);
-    // flexWheelIntake.move(0);
-    // pros::delay(100);
-
-
-    chassis.moveToPoint(5, 5, 1000);
-    doinker.set_value(1);
-
-
-    chassis.moveToPoint(20, 24, 1000);
-
-
-    // pros::delay(400);
-
-
-    chassis.turnToHeading(-80, 600, {.maxSpeed=100}, false);
-    // doinker.set_value(0);
-    // pros::delay(200);
-    // chassis.turnToHeading(0, 400);
-    // pros::delay(300);
-    // // chassis.moveToPoint(12, 30, 2000);
-
-
-    // flexWheelIntake.move(-127);
-
-
-    // chassis.moveToPoint(12, 22, 2000);
-}
-
-
-void rightBLUE() {
-
-
-    mogo.set_value(0);
-
-
-    // Score alliance goal
-    chassis.moveToPoint(0, -10, 700, {.forwards=false}, true);
-    chassis.turnToHeading(-90, 500, {}, false);
-    flexWheelIntake.move(-127);
-    pros::delay(500);
-
-
-    flexWheelIntake.move(0);
-
-
-    // // try to score the ring
-    // chassis.moveToPose(-18, -15, -120, 2000, {.lead=0.7}, false);
-
-
-    // // Reset for next
-    chassis.turnToHeading(0, 400, {}, false);
-
-
-    // Move to get the stacked ring
-    flexWheelIntake.move(-127);
-    chassis.moveToPose(-42, 30, -65, 2000, {.lead=0.3, .minSpeed=0}, false);
-
-
-    // Wait a bit to get it in but dont score
-    pros::delay(350);
-    flexWheelIntake.move_relative(410, -100);
-
-
-    flexWheelIntake.move(-20);
-
-
-
-
-    // move to the stake and get it
-    chassis.moveToPoint(-37, 9.2, 1300, {.forwards=false, .maxSpeed=100}, false);
-    mogo.set_value(1);
-    pros::delay(200);
-
-
-    // score and turn to the middle rings
-    flexWheelIntake.move(-127);
-    chassis.turnToHeading(-45, 300, {}, false);
-
-
-    chassis.resetLocalPosition();
-    // chassis.moveToPose(-16, 24, 0, 3300, {.lead=0.4}, false);
-   
-    // try to score the blue ring in the middle of the field
-    chassis.moveToPoint(3.2, -21, 3000, {.forwards=false, .maxSpeed=50});
-    // flexWheelIntake.move(0);
-
-
-
-
-    // chassis.turnToHeading(-135, 600);
-
-
-    // chassis.moveToPose(, float y, float theta, int timeout)
-
-
-
-
-
-
-
-
-    // pros::delay(10);
-    // chassis.turnToHeading(0, 500);
-    // flexWheelIntake.move(-50);
-    // chassis.moveToPoint(-35, 16, 900, {.forwards=false}, false);
-    // mogo.set_value(1);
-    // pros::delay(20);
-    // flexWheelIntake.move(-127);
-
-
-    // pros::delay(50);
-    // chassis.moveToPoint(-58, 30, 2000);
-    // chassis.turnToHeading(-180, 1000);
-    // chassis.moveToPoint(-51, 10, 1000);
-    // chassis.turnToHeading(-180, 100000);
-    // flexWheelIntake.move(0);
-}
-
-
 void getMogo() {
     mogo.set_value(1);
     pros::delay(500);
@@ -707,106 +376,10 @@ void stop() {
     pros::delay(2000);flexWheelIntake.move(0);pros::delay(1000000);
 }
 void autonomous() {
-    // this is the skills auton  codew
-    mogo.set_value(0);
-
-
-    chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
-
-
-    chassis.setPose(0, 0, 0);
-
-
-
-
-
-
-    // SCORE ALLIANCE GOAL
-    flexWheelIntake.move(-127);
-    pros::delay(1000);
-    flexWheelIntake.move(0); // not necessary
-
-
-    // SCORE LEFT SIDE
-
-
-    // get stake
-    chassis.moveToPoint(0, 12, 500);
-    chassis.turnToHeading(90, 500);    
-    chassis.moveToPoint(-20, 12, 900, {.forwards=false}, false);
-    getMogo();
-
-
-    // get first ring
-    chassis.turnToHeading(0, 500);    
-
-
-    flexWheelIntake.move(-127);
-
-
-    chassis.moveToPoint(-24, 28.8, 2000, {.forwards=true});
-    chassis.moveToPoint(-48, 32, 3000, {.forwards=true});
-    chassis.moveToPoint(-43, 32, 500, {.forwards=false});
-    chassis.moveToPoint(-44, 0, 3000, {.forwards=true, .maxSpeed=90});
-    chassis.moveToPoint(-44, 4, 2000, {});
-
-
-    chassis.moveToPoint(-44, 14, 1000, {});
-    chassis.moveToPoint(-60, 14, 1000);
-
-
-    // chassis.turnToHeading(0, 500);
-
-
-    chassis.moveToPoint(-70, -10, 3000, {.forwards=false}, false);
-
-
-    mogo.set_value(0);
-
-
-    pros::delay(1000);
-    chassis.resetLocalPosition();
-    flexWheelIntake.move(0);
-    //reset pos by ramming the wall
-    chassis.moveToPoint(0, 20, 1000);
-    chassis.turnToHeading(-90, 500);
-    chassis.moveToPoint(-50, 20, 1000);
-    chassis.resetLocalPosition();
-
-
-
-
-    // SCORE RIGHT SIDE
-
-
-    chassis.moveToPose(48, -3.5, -60, 4000, {.forwards=false, .lead=0.2});
-
-
-
-
-
-
-
-
-    // SCORE WALL STAKE x 1
-
-
-    // SCORE 2 RINGS
-
-
-    // HANG
-
-
+   
 }
 
-
-
-
-
-
 int conveyTurnAmt = 0;
-
-
 
 
 pros::c::optical_rgb_s_t rgb_value;
@@ -815,47 +388,77 @@ pros::c::optical_rgb_s_t rgb_value;
 // Arm motor
 
 
-int armMotorCounter = 0;
+int armMotorCounter = -1;
 
 
 bool nomoveflex = false;
 bool nomovearm = false;
+
+/**
+* Moves the arm motor to an angle
+* Speed is a percentage value. 100 is 127 in voltage
+* Precision is a delay to save resources. Lower is more accurate and higher is more efficient 
+*/
+void LBmoveToAngle(int angle, int speed = 100, int precision = 5) {
+    // If the rotational sensor is connected, then use the rotational sensor to move the ladybrown
+    // This is done by constantly checking the angle of the rotatoional sensor until it meets the angle specified
+    // However, if the rotational sensor is not connected, for example, it disconnects, it should use the internal motor encoding units instead
+
+    if (LBtracking.is_installed()) {
+        // If move more
+        if (angle * 100 > LBtracking.get_position() - 5) {
+            armMotor.move(speed * 1.27);
+            while (LBtracking.get_position() < angle * 100) {
+                pros::delay(precision);
+            }
+        } else {
+            armMotor.move(-(speed * 1.27));
+            while (LBtracking.get_position() > angle * 100) {
+                pros::delay(precision);
+
+            }
+        }
+        armMotor.move(0);
+    } else {
+        // This function should only run if the rotational sensor is not installed
+        pros::lcd::print(6, "LB tracking gone, using IME");
+        armMotor.move_absolute(angle * 5, speed * 10);
+    }
+    
+}
 
 void autoMoveArm() {
     // Wall stake mech code
     // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
 
     nomovearm = true;
-    // Arm motor has a gear ratio of 5 therefore we need to multiply every angle by 5
-
+    
+    armMotorCounter++;
     
     if (armMotorCounter == 0) {
-        armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+        armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
         pros::delay(10);
         // Moves the arm to catch the ring
-        armMotor.move_absolute(42 * 5, 200);
 
-    } else if (armMotorCounter == 1) {
+        LBmoveToAngle(28, 50, 2);
+        armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
+
+    } else  {
         // Complicated steps to push it down for the next step
         nomoveflex = true;
-        armMotor.move(-20);
-        flexWheelIntake.move(50);
-        pros::delay(20);
-        armMotor.move(0);
+        intake = -20;
         pros::delay(100);
-        flexWheelIntake.move(5);
         nomoveflex = false;
-    } else if (armMotorCounter == 2) {        
+        intake = -5;
+        pros::delay(100);
+        // Now score
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-        pros::delay(10);
-        armMotor.move_absolute(170*5, 10000);
-        pros::delay(550);
-        armMotor.move_absolute(0, 500);
+        LBmoveToAngle(135, 100, 5);
+        pros::delay(200);
+        LBmoveToAngle(0, 100);
         armMotorCounter = -1;
-
-
     }
-    armMotorCounter++;
     nomovearm = false;
 
 }
@@ -879,8 +482,10 @@ void hang() {
     if (hangbool) {
         armMotor.move_absolute(120 * 5, 127);
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+
     } else {
         armMotor.move_absolute(0, 127);
+
     }
  
 }
@@ -888,14 +493,9 @@ void hang() {
 
 // Driver code
 void opcontrol() {
-
-
-   
     // Before the while true loop, set the arm motor to brake mode instead of coast to prevent slipping
     armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
    
-
-
     // Main while true loop
     while (true) {
         // Get Values of the controller
@@ -989,47 +589,11 @@ void opcontrol() {
 
 
 
-        // A code that does not work but it is intended to detect if the flex wheel intake/chain is "stuck" and therefore should be moved backwards a bit
-        int fwmv = flexWheelIntake.get_actual_velocity();
-        int fwmv2 = flexWheelIntake.get_target_velocity();
-        if (!nomoveflex) {
-
-
-       
-            if (abs(fwmv) < 15 && fwmv2 > 0) {
-                flexwheelstuckamt++;
-                if (flexwheelstuckamt > 100) {
-                    flexwheelstuckamt = 0;
-                }
-                else if (flexwheelstuckamt > 30) {
-                    flexWheelIntake.move(127);
-                }
-                else {
-                    flexWheelIntake.move(  
-                        r2 * -127 // Intake
-                        + l2 * 127  // Outake
-
-
-                        + downArrow * -30
-                    );
-                }
-            } else {
-                flexwheelstuckamt = 0;
-           
-                flexWheelIntake.move(  
-                    r2 * -127 // Intake
-                    + l2 * 127  // Outake
-
-
-                    + downArrow * -30
-                );
-            }
-        }
-
-
         // Delay to save resources. This also makes sure that code runs properly (e.g. 10 ticks = 100 milliseconds)
         pros::delay(10);
 
+        // intake
+        intake = r2 * 100;
 
 
 
