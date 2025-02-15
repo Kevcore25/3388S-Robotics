@@ -9,6 +9,7 @@
 #include <cmath>
 #include <ctime>
 #include <string>
+#include "autons.hpp"
 
 
 //Bond Liu is an opp and a loser
@@ -20,6 +21,17 @@ int auton = 0;
 std::string autonDisplay[3] = {"left", "right", "awp"};
 std::string teamDisplay[3] = {"Red", "Blue", "None"};
 
+
+
+// rd::Image image2("", "Cat img");
+rd::Selector selector({    
+    {"Red Ring Side", leftRed, "", 0},
+    {"Red Mogo Rush", rightRed, "", 12},
+    {"Blue Mogo Rush", leftBLUE, "", 240},
+    {"Blue Ring Side", rightBLUE, "", 200},
+    {"Solo AWP Red", soloAWPRed, "", 350},
+
+});
 rd::Image catIMG("/usd/cat.bin", "Cat PNG");
 rd::Console console;
 
@@ -138,7 +150,7 @@ void flexWheelIntakeFunc() {
 
 
 void initialize() {
-   pros::lcd::initialize(); // initialize brain screen
+//    pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
     chassis.setPose(0.0, 0.0, 0.0);
 
@@ -181,11 +193,12 @@ void initialize() {
    // thread to for brain screen and position logging
    LBtracking.set_reversed(true);
    pros::Task intakeTask(flexWheelIntakeFunc);
+   selector.focus();
 
        while (true) {
            // print robot location to the brain screen
-           pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
-           pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), flexWheelIntake.get_temperature()); // heading
+        //    pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
+        //    pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), flexWheelIntake.get_temperature()); // heading
         //    pros::lcd::print(6, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(), ringsort.get_hue());
         //    pros::lcd::print(7, "Intake Speed: %i  ", flexWheelIntake.get_actual_velocity());
         //    // log position telemetry
@@ -311,7 +324,7 @@ void competition_initialize() {
 
 
 
-// atp(float x, float y, float theta, int timeout = 5000, int delay = 50, float curve = 0.5) {
+// void mtp(float x, float y, float theta, int timeout = 5000, int delay = 50, float curve = 0.5) {
 //     // Move to Pose custom function to reduce amount of coding
 //     chassis.moveToPose(x,y, theta,timeout, {.horizontalDrift=8, .lead = curve});
 //     pros::delay(delay);
@@ -353,17 +366,17 @@ bool moreLB = false;
 void armStagesOneRing() {
     if (armMotorCounter == 0) {
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        LBmoveToAngle(17.2, 30, 1);
+        LBmoveToAngle(18, 30, 1);
 
     } else if (armMotorCounter == 1) {
         // Complicated steps to push it down for the next step
         intake = -20;
-        LBmoveToAngle(155 + moreLB * 45, 100, 5, 1000);
+        LBmoveToAngle(155 + moreLB * 35, 100, 5);
         intake = 0;
         moreLB = false;
 
     } else if (armMotorCounter == 2) {
-        LBmoveToAngle(-2, 100, 2, 1000);
+        LBmoveToAngle(-10, 100, 2, 1500);
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         // resetLBPos();
         armMotorCounter = -1;
@@ -407,214 +420,20 @@ void armStagesTwoRing() {
 void allianceStakeCode() {
    // Wall stake mech code
    // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
-   move_forward(-5.8, 500, true, {.minSpeed=30});
+   move_forward(-6.6, 500, true, {.minSpeed=30});
    moreLB = true;
 }
 
-/* Function to "double tap" the intake to make the ring in the ladybrown actually get "in there" so it can stay there and won't fall off*/
-void intakeLB(int amt = 2) {
-    for (int i = 0; i < amt; i++) {
-        intake = 100;
-        pros::delay(150);
-        intake = 0;
-        pros::delay(150);
-    }
-}
 
 void lbLater() {
     pros::delay(750);
     armStagesOneRing();
 }
-void getMogo() {
-    mogo.set_value(1);
-    pros::delay(300);
-}
-
-void intakeLBT() {intakeLB();}
-
-
-
-
-
-
-void bottomRIGHT() {
-
-    // get mogo
-
-    move_forward(14, 750);
-    chassis.turnToHeading(-90, 500, {}, false);
-    move_forward(-21, 750);
-
-    pros::delay(50);
-    getMogo();
-    // // Score the first ring
-    chassis.turnToHeading(0, 600, {}, false);
-    intake = 100;
-    move_forward(20, 1000);
-
-    // // far ring
-    chassis.turnToHeading(27, 500, {}, false);
-    move_forward(53, 3000);
-
-    pros::delay(300);
-
-    // // Wall stake preerpation
-    chassis.turnToHeading(153, 1000, {}, false);
-    armStagesOneRing();
-    move_forward(27, 1000);
-    chassis.turnToHeading(90, 500, {}, false);
-
-    pros::delay(300);
-    pros::Task lbTask(intakeLBT);
-
-    // // // Wall stkae    
-    move_forward(10, 1000, false, {.maxSpeed= 50});
-
-    armStagesOneRing();
-    move_forward(-13, 750, false);
-    pros::Task armStage(armStagesOneRing);
-
-    // // // Get the 3 rings 
-    chassis.turnToHeading(177, 1000, {}, false);
-    intake=100;
-    move_forward(54, 3000, false, {.maxSpeed=105});
-    pros::delay(500);
-
-    chassis.turnToHeading(55, 750, {}, false);
-    move_forward(10, 500);
-    pros::delay(300);
-
-    chassis.turnToHeading(-25, 500, {}, false);
-    pros::delay(200);
-    mogo.set_value(0);
-    move_forward(-18, 500);
-    move_forward(9, 300);
-
-    chassis.turnToHeading(85, 750, {}, false);
-    move_forward(20, 300, false, {.maxSpeed=50});
-
-    // // Turn for 2nd 
-
-
-
-}
-
-void bottomLEFT() {
-
-    // Get the mogo
-    move_forward(-72, 3000, false);
-    move_forward(-10, 500, false, {.maxSpeed=80});
-    getMogo();
-    chassis.turnToHeading(5, 500, {}, false);
-
-    // Score first ring
-    intake = 100;
-    move_forward(23, 1000);
-
-    // // Wall stake preparation
-    chassis.turnToHeading(-57, 500, {}, false);
-    move_forward(36, 1000);    
-    armStagesOneRing();
-    chassis.turnToHeading(-90, 500, {}, false);
-
-    pros::delay(300);
-    pros::Task lbTask(intakeLBT);
-
-    //  // // Wall stkae    
-     move_forward(10, 1000, false, {.maxSpeed=50});
-
-     armStagesOneRing();    
-     move_forward(-11, 1000, false);
-     armStagesOneRing();
-     
-    // // Get the far ring
-    chassis.turnToHeading(0, 500, {}, false);
-    intake = 100;
-    move_forward(28, 1000);
-
-    // // Get the 3 rings 
-    chassis.turnToHeading(-174, 750, {}, false);
-    move_forward(60, 2000, false);
-    move_forward(48,1000, false, {.maxSpeed=80});
-    pros::delay(300);
-    move_forward(-4, 400);
-
-    chassis.turnToHeading(-45, 500, {}, false);
-    move_forward(20, 1000);
-    pros::delay(200);
-
-    chassis.turnToHeading(20, 1000, {}, false);
-    mogo.set_value(0);
-    move_forward(-16, 750);
-    move_forward(4, 400);
-
-
-
-
-}
-
-void TOPLEFT() {
-    
-    intake = 0;
-    chassis.turnToHeading(0, 500, {}, false);
-
-    move_forward(72, 3000);
-
-    chassis.turnToHeading(90, 400, {}, false);
-
-    // Intake the ring    
-    move_forward(24, 800);
-    intake = 80;
-    move_forward(6, 500);
-    pros::delay(300);
-    intake = 0;
-
-    // Grab the mogo and push it into the corner
-    chassis.turnToHeading(-190, 750, {}, false);
-    move_forward(-36, 1000);
-    getMogo();
-    chassis.turnToHeading(100, 750, {}, false);
-    move_forward(-40, 800);
-    mogo.set_value(0);
-    move_forward(4, 300);
-}
-
-void skills() {
-    // Score the aliance stake
-    // intake = 100;
-    // pros::delay(750);
-    // intake = 0;
-
-    /* BOTTOM RIGHT CORNER */ 
-    // bottomRIGHT();
-    
-
-    /* BOTTOM LEFT CORNER */
-    chassis.setPose(53, 27, 90);
-    bottomLEFT();
-
-    /* TOP LEFT CORNER */
-    // TOPLEFT();
-    pros::delay(2000);
-    intake = 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 void autonomous() { 
+    // chassis.setPose(0.0, 0.0, 0.0);
 
     // skills();
 
@@ -627,11 +446,9 @@ void autonomous() {
     // else if (team == 1 && auton == 1) { rightBLUE(); }
     // else if (team == 0 && auton == 2) { soloAWPRed(); };
     // else if (team == 1 && auton == 2) { soloAWPBlue(); };
-    // pros::delay(1000);
-    // chassis.setPose(0, 0, 0);
+    pros::delay(1000);
+    selector.run_auton();
 
-    skills();
-    // chassis.turnToHeading(180, 1000000);
 }
 
 int conveyTurnAmt = 0;
@@ -681,25 +498,7 @@ void opcontrol() {
     // onmatch = true;
 
     // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
-    // // Main while true loop
-
-    // for (int i = 0; i < 18; i++) {
-    //     chassis.setPose(0, 0, 0);
-    //     pros::delay(500);
-
-    //     int wanted = (i + 1) * 10;
-        
-    //     pros::lcd::print(0, "Wanted: %u", wanted);
-    //     chassis.turnToHeading(wanted, 3000);
-
-    //     pros::delay(500);
-
-    //     pros::delay(5000);
-    // }
-
-    // pros::delay(1000000);
-
-
+    // Main while true loop
 
     catIMG.focus();
     while (true) {

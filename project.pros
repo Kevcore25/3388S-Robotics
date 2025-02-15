@@ -1,11 +1,11 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "TESTING",
+    "project_name": "COMP",
     "target": "v5",
     "templates": {
       "LemLib": {
-        "location": "/home/kevcore/.config/pros/templates/LemLib@0.5.5",
+        "location": "C:\\Users\\mjj08\\AppData\\Roaming\\PROS\\templates\\LemLib@0.5.5",
         "metadata": {
           "origin": "LemLib"
         },
@@ -48,7 +48,7 @@
         "version": "0.5.5"
       },
       "kernel": {
-        "location": "/home/kevcore/.config/pros/templates/kernel@4.1.1",
+        "location": "C:\\Users\\mjj08\\AppData\\Roaming\\PROS\\templates\\kernel@4.1.1",
         "metadata": {
           "cold_addr": "58720256",
           "cold_output": "bin/cold.package.bin",
@@ -121,7 +121,7 @@
         "version": "4.1.1"
       },
       "liblvgl": {
-        "location": "/home/kevcore/.config/pros/templates/liblvgl@8.3.8",
+        "location": "C:\\Users\\mjj08\\AppData\\Roaming\\PROS\\templates\\liblvgl@8.3.8",
         "metadata": {
           "origin": "pros-mainline"
         },
@@ -295,12 +295,37 @@
         "target": "v5",
         "user_files": [],
         "version": "8.3.8"
+      },
+      "robodash": {
+        "location": "C:\\Users\\mjj08\\AppData\\Roaming\\PROS\\templates\\robodash@2.3.0",
+        "metadata": {
+          "origin": "robodash"
+        },
+        "name": "robodash",
+        "py/object": "pros.conductor.templates.local_template.LocalTemplate",
+        "supported_kernels": "^4.1.0",
+        "system_files": [
+          "include/robodash/views/image.hpp",
+          "firmware/robodash.a",
+          "include/robodash/views/selector.hpp",
+          "include/robodash/impl/styles.h",
+          "include/robodash/impl/assets.h",
+          "ASSET_FILES",
+          "include/robodash/api.h",
+          "include/robodash/apix.h",
+          "include/robodash/views/console.hpp",
+          "include/robodash/core.h",
+          "include/robodash/impl/filesystem.h"
+        ],
+        "target": "v5",
+        "user_files": [],
+        "version": "2.3.0"
       }
     },
     "upload_options": {
-      "slot": 1,
-      "icon": "planet",
-      "after": "run"
+      "description": "main",
+      "icon": "X",
+      "slot": 1
     },
     "use_early_access": false
   }
