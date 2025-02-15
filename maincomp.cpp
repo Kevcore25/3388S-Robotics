@@ -371,7 +371,7 @@ void armStagesOneRing() {
     } else if (armMotorCounter == 1) {
         // Complicated steps to push it down for the next step
         intake = -20;
-        LBmoveToAngle(155 + moreLB * 35, 100, 5);
+        LBmoveToAngle(155 + moreLB * 60, 100, 5);
         intake = 0;
         moreLB = false;
 
@@ -417,12 +417,13 @@ void armStagesTwoRing() {
     nomovearm = false;
 }
 
+
 void allianceStakeCode() {
-   // Wall stake mech code
-   // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
-   move_forward(-6.6, 500, true, {.minSpeed=30});
-   moreLB = true;
-}
+    // Wall stake mech code
+    // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
+    move_forward(-5.8, 500, true, {.minSpeed=30});
+    moreLB = true;
+ }
 
 
 void lbLater() {

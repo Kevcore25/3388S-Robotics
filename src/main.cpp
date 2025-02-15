@@ -358,7 +358,7 @@ void armStagesOneRing() {
     } else if (armMotorCounter == 1) {
         // Complicated steps to push it down for the next step
         intake = -20;
-        LBmoveToAngle(155 + moreLB * 45, 100, 5, 1000);
+        LBmoveToAngle(155 + moreLB * 60, 100, 5, 1000);
         intake = 0;
         moreLB = false;
 
@@ -453,7 +453,7 @@ void bottomRIGHT() {
     move_forward(20, 1000);
 
     // // far ring
-    chassis.turnToHeading(27, 500, {}, false);
+    chassis.turnToHeading(27, 400, {}, false);
     move_forward(53, 3000);
 
     pros::delay(300);
@@ -464,7 +464,7 @@ void bottomRIGHT() {
     move_forward(27, 1000);
     chassis.turnToHeading(90, 500, {}, false);
 
-    pros::delay(300);
+    // pros::delay(300);
     pros::Task lbTask(intakeLBT);
 
     // // // Wall stkae    
@@ -477,7 +477,7 @@ void bottomRIGHT() {
     // // // Get the 3 rings 
     chassis.turnToHeading(177, 1000, {}, false);
     intake=100;
-    move_forward(54, 3000, false, {.maxSpeed=105});
+    move_forward(54, 2500, false, {.maxSpeed=105});
     pros::delay(500);
 
     chassis.turnToHeading(55, 750, {}, false);
@@ -491,7 +491,7 @@ void bottomRIGHT() {
     move_forward(9, 300);
 
     chassis.turnToHeading(85, 750, {}, false);
-    move_forward(20, 300, false, {.maxSpeed=50});
+    move_forward(20, 800, false, {.maxSpeed=50});
 
     // // Turn for 2nd 
 
@@ -503,7 +503,7 @@ void bottomLEFT() {
 
     // Get the mogo
     move_forward(-72, 3000, false);
-    move_forward(-10, 500, false, {.maxSpeed=80});
+    move_forward(-10, 400, false, {.maxSpeed=80});
     getMogo();
     chassis.turnToHeading(5, 500, {}, false);
 
@@ -513,44 +513,47 @@ void bottomLEFT() {
 
     // // Wall stake preparation
     chassis.turnToHeading(-57, 500, {}, false);
-    move_forward(36, 1000);    
+    move_forward(36.5, 1000);    
     armStagesOneRing();
     chassis.turnToHeading(-90, 500, {}, false);
 
-    pros::delay(300);
     pros::Task lbTask(intakeLBT);
 
-    //  // // Wall stkae    
-     move_forward(10, 1000, false, {.maxSpeed=50});
+    // Wall stkae    
+    move_forward(10, 900, false, {.maxSpeed=50});
 
-     armStagesOneRing();    
-     move_forward(-11, 1000, false);
-     armStagesOneRing();
+    armStagesOneRing();    
+    move_forward(-11, 900, true);
+    pros::Task yes(armStagesOneRing);
      
-    // // Get the far ring
-    chassis.turnToHeading(0, 500, {}, false);
+    // Get the far ring
+    chassis.turnToHeading(0, 450, {}, false);
     intake = 100;
     move_forward(28, 1000);
 
-    // // Get the 3 rings 
-    chassis.turnToHeading(-174, 750, {}, false);
-    move_forward(60, 2000, false);
-    move_forward(48,1000, false, {.maxSpeed=80});
+    // Get the 3 rings 
+    chassis.turnToHeading(-176, 1000, {}, false);
+    move_forward(83.5, 2000, false, {.maxSpeed=110});
     pros::delay(300);
     move_forward(-4, 400);
 
     chassis.turnToHeading(-45, 500, {}, false);
-    move_forward(20, 1000);
-    pros::delay(200);
+    move_forward(20.5, 1000);
+    pros::delay(100);
 
     chassis.turnToHeading(20, 1000, {}, false);
     mogo.set_value(0);
-    move_forward(-16, 750);
+    move_forward(-16, 900);
     move_forward(4, 400);
-
-
-
-
+}
+void getRingIntoLB() {
+    pros::delay(100);
+    armStagesOneRing();
+    pros::delay(500);
+    intake = 100;
+    pros::delay(1000);
+    intake = 0;
+    intakeLB();
 }
 
 void TOPLEFT() {
@@ -560,41 +563,76 @@ void TOPLEFT() {
 
     move_forward(72, 3000);
 
-    chassis.turnToHeading(90, 400, {}, false);
+    chassis.turnToHeading(90, 500, {}, false);
 
     // Intake the ring    
-    move_forward(24, 800);
-    intake = 80;
-    move_forward(6, 500);
-    pros::delay(300);
-    intake = 0;
+    move_forward(20, 800);    
+    intake = 100;    
+    pros::Task grib(getRingIntoLB);
+    move_forward(4, 500);
 
-    // Grab the mogo and push it into the corner
-    chassis.turnToHeading(-190, 750, {}, false);
-    move_forward(-36, 1000);
+    // Grab the mogo
+    chassis.turnToHeading(-136, 900, {}, false);    
+
+    // pros::delay(100000000);
+    move_forward(-30.5, 2000, false, {.maxSpeed=70});
     getMogo();
-    chassis.turnToHeading(100, 750, {}, false);
-    move_forward(-40, 800);
-    mogo.set_value(0);
-    move_forward(4, 300);
+
+    // Score alliance stake
+    chassis.turnToHeading(-5, 750, {}, false);
+    move_forward(28, 800, false, {.maxSpeed=70}); 
+    pros::delay(100);   
+    allianceStakeCode();
+    pros::delay(50);
+    armStagesOneRing();
+    pros::delay(100);    
+    pros::Task yes(armStagesOneRing);
+    move_forward(-4, 500, false);
+    intake = 100;
+    move_forward(-2, 400);
+
+
+
 }
+
+
+
+void topRIGHT() {
+    // Get the far ring
+    chassis.turnToHeading(130, 700, {}, false);
+    move_forward(34, 1000);
+    
+    // Get the 3 rings in the corner
+    chassis.turnToHeading(55, 500, {}, false);
+    move_forward(34, 1000);
+    chassis.turnToHeading(-90, 800, {}, false);
+    move_forward(12, 1000);
+    // chassis.turnToHeading(-135, 400, {}, false);
+    // mogo.set_value(0);
+    // move_forward(-18, 1000);
+
+}
+
 
 void skills() {
     // Score the aliance stake
-    // intake = 100;
-    // pros::delay(750);
-    // intake = 0;
+    intake = 100;
+    pros::delay(750);
+    intake = 0;
 
     /* BOTTOM RIGHT CORNER */ 
-    // bottomRIGHT();
-    
+    // bottomRIGHT();    
 
     /* BOTTOM LEFT CORNER */
     chassis.setPose(53, 27, 90);
     bottomLEFT();
 
     /* TOP LEFT CORNER */
-    // TOPLEFT();
+    TOPLEFT();
+
+    /* TOP RIGHT CORNER */
+    topRIGHT();
+
     pros::delay(2000);
     intake = 0;
 }
@@ -790,7 +828,8 @@ void opcontrol() {
 
 
         if (downArrow && !movingArmMotor) {
-            pros::Task armmotortask2(armStagesTwoRing);
+            // pros::Task armmotortask2(armStagesTwoRing);
+            rollers.move(-127);
         }
 
 

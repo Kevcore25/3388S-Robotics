@@ -81,6 +81,7 @@ inline pros::MotorGroup right_motors({17, 19, 18}, pros::MotorGearset::blue);
 // inline pros::Motor flexWheels(5, pros::MotorGearset::green);
 
 inline pros::MotorGroup flexWheelIntake({-12, -4});
+inline pros::Motor rollers(-4);
 
 
 inline pros::Imu imu(8);
