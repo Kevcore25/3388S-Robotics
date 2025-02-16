@@ -467,14 +467,14 @@ void bottomRIGHT() {
     // pros::delay(300);
     pros::Task lbTask(intakeLBT);
 
-    // // // Wall stkae    
+    // Wall stkae    
     move_forward(10, 1000, false, {.maxSpeed= 50});
 
     armStagesOneRing();
     move_forward(-13, 750, false);
     pros::Task armStage(armStagesOneRing);
 
-    // // // Get the 3 rings 
+    // Get the 3 rings 
     chassis.turnToHeading(177, 1000, {}, false);
     intake=100;
     move_forward(54, 2500, false, {.maxSpeed=105});
@@ -511,10 +511,11 @@ void bottomLEFT() {
     intake = 100;
     move_forward(23, 1000);
 
-    // // Wall stake preparation
+    // Wall stake preparation
     chassis.turnToHeading(-57, 500, {}, false);
     move_forward(36.5, 1000);    
     armStagesOneRing();
+    intake = 100;
     chassis.turnToHeading(-90, 500, {}, false);
 
     pros::Task lbTask(intakeLBT);
@@ -533,7 +534,7 @@ void bottomLEFT() {
 
     // Get the 3 rings 
     chassis.turnToHeading(-176, 1000, {}, false);
-    move_forward(83.5, 2000, false, {.maxSpeed=110});
+    move_forward(83.5, 2000, false, {.maxSpeed=100});
     pros::delay(300);
     move_forward(-4, 400);
 
@@ -572,15 +573,15 @@ void TOPLEFT() {
     move_forward(4, 500);
 
     // Grab the mogo
-    chassis.turnToHeading(-136, 900, {}, false);    
+    chassis.turnToHeading(-136, 700, {}, false);    
 
-    // pros::delay(100000000);
-    move_forward(-30.5, 2000, false, {.maxSpeed=70});
+    move_forward(-30, 2000, false, {.maxSpeed=70});
     getMogo();
+    pros::delay(100000000);
 
     // Score alliance stake
-    chassis.turnToHeading(-5, 750, {}, false);
-    move_forward(28, 800, false, {.maxSpeed=70}); 
+    chassis.turnToHeading(0, 750, {}, false);
+    move_forward(28, 1000, false, {.maxSpeed=70}); 
     pros::delay(100);   
     allianceStakeCode();
     pros::delay(50);
@@ -603,10 +604,12 @@ void topRIGHT() {
     move_forward(34, 1000);
     
     // Get the 3 rings in the corner
-    chassis.turnToHeading(55, 500, {}, false);
-    move_forward(34, 1000);
-    chassis.turnToHeading(-90, 800, {}, false);
-    move_forward(12, 1000);
+    chassis.turnToHeading(40, 500, {}, false);
+    move_forward(28, 1000);
+    move_to_relative_point(8.2, -15, 1000, false, {.forwards=false});
+    chassis.turnToHeading(10, 800, {}, false);
+    doinker.set_value(1);
+    // move_forward(12, 1000);
     // chassis.turnToHeading(-135, 400, {}, false);
     // mogo.set_value(0);
     // move_forward(-18, 1000);
