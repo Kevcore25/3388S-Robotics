@@ -6,11 +6,11 @@
 #include "pros/motors.hpp"
 #include "pros/optical.hpp"
 #include "pros/rtos.hpp"
+#include "robodash/views/selector.hpp"
 #include <cmath>
 #include <ctime>
 #include <string>
 #include "autons.hpp"
-
 
 //Bond Liu is an opp and a loser
 int team = 2;
@@ -21,9 +21,6 @@ int auton = 0;
 std::string autonDisplay[3] = {"left", "right", "awp"};
 std::string teamDisplay[3] = {"Red", "Blue", "None"};
 
-
-
-// rd::Image image2("", "Cat img");
 rd::Selector selector({    
     {"Red Ring Side", leftRed, "", 0},
     {"Red Mogo Rush", rightRed, "", 12},
@@ -32,9 +29,7 @@ rd::Selector selector({
     {"Solo AWP Red", soloAWPRed, "", 350},
 
 });
-rd::Image catIMG("/usd/cat.bin", "Cat PNG");
 rd::Console console;
-
 bool imudc = false;
 
 
@@ -72,24 +67,22 @@ bool onmatch = false;
 
 bool ejecting = false;
 void ejectring() {
-    ejecting = true;
-    // pros::lcd::print(9, "INTAKE STOP");
+    if (!onmatch) {
+         ejecting = true;
+        // pros::lcd::print(9, "INTAKE STOP");
 
-    // Keep detecting until the hole is passed
-    while (ringsort.get_proximity() >= 120) {
-        pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
+        // Keep detecting until the hole is passed
+        while (ringsort.get_proximity() >= 100) {
+            pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
+        }
+
+        chain.move(-10);
+
+        pros::delay(150);
+
+        ejecting = false;
     }
-
-    flexWheelIntake.move(0);
-
-
-    pros::delay(150);
-    // LBmoveToAngle(0);
-
-
-    // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-
-    ejecting = false;
+   
 }
 
 
@@ -105,20 +98,26 @@ void flexWheelIntakeFunc() {
    while (true) {
        // Spin the intake if on
        int intakespd = intake * 1.27;
-       flexWheelIntake.move(intakespd );
+       chain.move(intakespd);
+
+       if (rollerIntake == 0) {
+            rollers.move(intakespd);
+       } else {
+            rollers.move(rollerIntake);
+       }
 
 
        // Montior for highest speed
-    // pros::lcd::print(5, "Actual velocity: %i %i %i",flexWheelIntake.get_actual_velocity(), fwamt, yesfw);
+    // pros::lcd::print(5, "Actual velocity: %i %i %i",chain.get_actual_velocity(), fwamt, yesfw);
 
 
        if (intakespd > 100 && (armMotorCounter == 0 && armMotorCounterDouble == 0 && alliancecounter == 0)) {
            fwamt++;
            int prox = ringsort.get_proximity();
-           if (fwamt > 250 && flexWheelIntake.get_actual_velocity() < 15 && yesfw < 200) {
-            //    pros::lcd::print(5, "Actual velocity: %i",flexWheelIntake.get_actual_velocity());
+           if (fwamt > 250 && chain.get_actual_velocity() < 15 && yesfw < 200) {
+            //    pros::lcd::print(5, "Actual velocity: %i",chain.get_actual_velocity());
                // Move it back then fwd again
-               flexWheelIntake.move(-127);
+               chain.move(-127);
                pros::delay(150);
                fwamt = 0;
                yesfw += 30;
@@ -131,7 +130,9 @@ void flexWheelIntakeFunc() {
                    (team == 0 && hue >= 200 && hue <= 270) ||
                    (team == 1 && hue <= 30)
                )) {
-                   if (prox >= 100) {} // eject ring should be here
+                   if (prox >= 200) {
+                        ejectring();
+                   } // eject ring should be here
                }
                }
            }
@@ -193,14 +194,13 @@ void initialize() {
    // thread to for brain screen and position logging
    LBtracking.set_reversed(true);
    pros::Task intakeTask(flexWheelIntakeFunc);
-   selector.focus();
 
        while (true) {
            // print robot location to the brain screen
         //    pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
-        //    pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), flexWheelIntake.get_temperature()); // heading
+        //    pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), chain.get_temperature()); // heading
         //    pros::lcd::print(6, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(), ringsort.get_hue());
-        //    pros::lcd::print(7, "Intake Speed: %i  ", flexWheelIntake.get_actual_velocity());
+        //    pros::lcd::print(7, "Intake Speed: %i  ", chain.get_actual_velocity());
         //    // log position telemetry
 
             
@@ -324,7 +324,7 @@ void competition_initialize() {
 
 
 
-// void mtp(float x, float y, float theta, int timeout = 5000, int delay = 50, float curve = 0.5) {
+// atp(float x, float y, float theta, int timeout = 5000, int delay = 50, float curve = 0.5) {
 //     // Move to Pose custom function to reduce amount of coding
 //     chassis.moveToPose(x,y, theta,timeout, {.horizontalDrift=8, .lead = curve});
 //     pros::delay(delay);
@@ -338,7 +338,7 @@ void competition_initialize() {
 
 
 void stop() {
-   pros::delay(2000);flexWheelIntake.move(0);pros::delay(1000000);
+   pros::delay(2000);chain.move(0);pros::delay(1000000);
 }
 
 
@@ -366,17 +366,17 @@ bool moreLB = false;
 void armStagesOneRing() {
     if (armMotorCounter == 0) {
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-        LBmoveToAngle(18, 30, 1);
+        LBmoveToAngle(17.2, 30, 1);
 
     } else if (armMotorCounter == 1) {
         // Complicated steps to push it down for the next step
         intake = -20;
-        LBmoveToAngle(155 + moreLB * 60, 100, 5);
+        LBmoveToAngle(155 + moreLB * 60, 100, 5, 1000);
         intake = 0;
         moreLB = false;
 
     } else if (armMotorCounter == 2) {
-        LBmoveToAngle(-10, 100, 2, 1500);
+        LBmoveToAngle(-2, 100, 2, 1000);
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         // resetLBPos();
         armMotorCounter = -1;
@@ -417,14 +417,22 @@ void armStagesTwoRing() {
     nomovearm = false;
 }
 
-
 void allianceStakeCode() {
-    // Wall stake mech code
-    // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
-    move_forward(-5.8, 500, true, {.minSpeed=30});
-    moreLB = true;
- }
+   // Wall stake mech code
+   // Should be ran inside a thread because it uses delay commands which can interrupt the main while true loop
+   move_forward(-5.8, 500, true, {.minSpeed=30});
+   moreLB = true;
+}
 
+/* Function to "double tap" the intake to make the ring in the ladybrown actually get "in there" so it can stay there and won't fall off*/
+void intakeLB(int amt = 2) {
+    for (int i = 0; i < amt; i++) {
+        intake = 100;
+        pros::delay(150);
+        intake = 0;
+        pros::delay(150);
+    }
+}
 
 void lbLater() {
     pros::delay(750);
@@ -432,24 +440,33 @@ void lbLater() {
 }
 
 
+void intakeLBT() {intakeLB();}
+
+
+
+
+
+
+
+
+
+
+
 
 void autonomous() { 
-    // chassis.setPose(0.0, 0.0, 0.0);
 
-    // skills();
+    // rd::Selector selector({    
+    //     {"Red Ring Side", leftRed, "", 0},
+    //     {"Red Mogo Rush", rightRed, "", 12},
+    //     {"Blue Mogo Rush", leftBLUE, "", 240},
+    //     {"Blue Ring Side", rightBLUE, "", 200},
+    //     {"Solo AWP Red", soloAWPRed, "", 350},
+    
+    // });
 
-    // team 0 = red, team 1 = blue
-    // false is left, true is right
-    // // Auton selector
-    // if      (team == 0 && auton == 0) { leftRed(); }
-    // else if (team == 0 && auton == 1)  { rightRed(); }
-    // else if (team == 1 && auton == 0) { leftBLUE(); }
-    // else if (team == 1 && auton == 1) { rightBLUE(); }
-    // else if (team == 0 && auton == 2) { soloAWPRed(); };
-    // else if (team == 1 && auton == 2) { soloAWPBlue(); };
-    pros::delay(1000);
+    // Teams
+
     selector.run_auton();
-
 }
 
 int conveyTurnAmt = 0;
@@ -490,18 +507,47 @@ void hang() {
 
 
 
+/* Setup the ROBODASH setups and team */
+void rdsetup() {
 
-
+    if (selector.get_auton().value().name == "Red Ring Side" || selector.get_auton().value().name == "Red Mogo Rush" || selector.get_auton().value().name == "Solo AWP Red") {
+        team = 0;
+        console.println("Team is Red");
+    } else {
+        team = 1;
+        console.println("Team is Blue");
+    }
+    
+    rd::Image catIMG("/usd/cat.bin", "Cat PNG");
+    catIMG.focus();
+}
 // Driver code
 void opcontrol() {
    // Before the while true loop, set the arm motor to brake mode instead of coast to prevent slipping
     // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    // onmatch = true;
+    onmatch = true;
 
     // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
-    // Main while true loop
+    // // Main while true loop
 
-    catIMG.focus();
+    // for (int i = 0; i < 18; i++) {
+    //     chassis.setPose(0, 0, 0);
+    //     pros::delay(500);
+
+    //     int wanted = (i + 1) * 10;
+        
+    //     pros::lcd::print(0, "Wanted: %u", wanted);
+    //     chassis.turnToHeading(wanted, 3000);
+
+    //     pros::delay(500);
+
+    //     pros::delay(5000);
+    // }
+
+    // pros::delay(1000000);
+
+    pros::Task rdsetupTask(rdsetup);
+
     while (true) {
         // Get Values of the controller
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -531,7 +577,7 @@ void opcontrol() {
 
 
 
-        int downArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN);
+        int downArrow = controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
         int leftArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT);
         int upArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
         int rightArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
@@ -567,7 +613,14 @@ void opcontrol() {
 
         }
         if (leftArrow) {
-            controller.print(2, 0, "Testing drive...          ");
+            if (team == 0 ) {
+                team = 1;
+                controller.print(2, 0, "Blue Team      ");
+            } else {
+                team = 0;
+                controller.print(2, 0, "Red Team     ");
+            }
+            // controller.print(2, 0, "Testing drive...          ");
             // test_drive(); // Hangs code
         }
 
@@ -580,6 +633,8 @@ void opcontrol() {
         if (x) {
             manualarm = !manualarm;
             armMotor.tare_position();
+            LBtracking.reset();
+            LBtracking.reset_position();            
             controller.print(2, 0, "Manual Arm %s          ", doinkerValue ? "ON" : "OFF");
         }
 
@@ -589,8 +644,11 @@ void opcontrol() {
         }
 
 
-        if (downArrow && !movingArmMotor) {
-            pros::Task armmotortask2(armStagesTwoRing);
+        if (downArrow) {
+            // pros::Task armmotortask2(armStagesTwoRing);
+            rollerIntake = 127;
+        } else {
+            rollerIntake = 0;
         }
 
 

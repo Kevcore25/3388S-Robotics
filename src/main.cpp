@@ -6,10 +6,11 @@
 #include "pros/motors.hpp"
 #include "pros/optical.hpp"
 #include "pros/rtos.hpp"
+#include "robodash/views/selector.hpp"
 #include <cmath>
 #include <ctime>
 #include <string>
-
+#include "autons.hpp"
 
 //Bond Liu is an opp and a loser
 int team = 2;
@@ -20,9 +21,15 @@ int auton = 0;
 std::string autonDisplay[3] = {"left", "right", "awp"};
 std::string teamDisplay[3] = {"Red", "Blue", "None"};
 
-rd::Image catIMG("/usd/cat.bin", "Cat PNG");
-rd::Console console;
+rd::Selector selector({    
+    {"Red Ring Side", leftRed, "", 0},
+    {"Red Mogo Rush", rightRed, "", 12},
+    {"Blue Mogo Rush", leftBLUE, "", 240},
+    {"Blue Ring Side", rightBLUE, "", 200},
+    {"Solo AWP Red", soloAWPRed, "", 350},
 
+});
+rd::Console console;
 bool imudc = false;
 
 
@@ -60,24 +67,22 @@ bool onmatch = false;
 
 bool ejecting = false;
 void ejectring() {
-    ejecting = true;
-    // pros::lcd::print(9, "INTAKE STOP");
+    if (!onmatch) {
+         ejecting = true;
+        // pros::lcd::print(9, "INTAKE STOP");
 
-    // Keep detecting until the hole is passed
-    while (ringsort.get_proximity() >= 120) {
-        pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
+        // Keep detecting until the hole is passed
+        while (ringsort.get_proximity() >= 100) {
+            pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
+        }
+
+        chain.move(-10);
+
+        pros::delay(150);
+
+        ejecting = false;
     }
-
-    flexWheelIntake.move(0);
-
-
-    pros::delay(150);
-    // LBmoveToAngle(0);
-
-
-    // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-
-    ejecting = false;
+   
 }
 
 
@@ -93,20 +98,26 @@ void flexWheelIntakeFunc() {
    while (true) {
        // Spin the intake if on
        int intakespd = intake * 1.27;
-       flexWheelIntake.move(intakespd );
+       chain.move(intakespd);
+
+       if (rollerIntake == 0) {
+            rollers.move(intakespd);
+       } else {
+            rollers.move(rollerIntake);
+       }
 
 
        // Montior for highest speed
-    // pros::lcd::print(5, "Actual velocity: %i %i %i",flexWheelIntake.get_actual_velocity(), fwamt, yesfw);
+    // pros::lcd::print(5, "Actual velocity: %i %i %i",chain.get_actual_velocity(), fwamt, yesfw);
 
 
        if (intakespd > 100 && (armMotorCounter == 0 && armMotorCounterDouble == 0 && alliancecounter == 0)) {
            fwamt++;
            int prox = ringsort.get_proximity();
-           if (fwamt > 250 && flexWheelIntake.get_actual_velocity() < 15 && yesfw < 200) {
-            //    pros::lcd::print(5, "Actual velocity: %i",flexWheelIntake.get_actual_velocity());
+           if (fwamt > 250 && chain.get_actual_velocity() < 15 && yesfw < 200) {
+            //    pros::lcd::print(5, "Actual velocity: %i",chain.get_actual_velocity());
                // Move it back then fwd again
-               flexWheelIntake.move(-127);
+               chain.move(-127);
                pros::delay(150);
                fwamt = 0;
                yesfw += 30;
@@ -119,7 +130,9 @@ void flexWheelIntakeFunc() {
                    (team == 0 && hue >= 200 && hue <= 270) ||
                    (team == 1 && hue <= 30)
                )) {
-                   if (prox >= 100) {} // eject ring should be here
+                   if (prox >= 200) {
+                        ejectring();
+                   } // eject ring should be here
                }
                }
            }
@@ -138,7 +151,7 @@ void flexWheelIntakeFunc() {
 
 
 void initialize() {
-   pros::lcd::initialize(); // initialize brain screen
+//    pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
     chassis.setPose(0.0, 0.0, 0.0);
 
@@ -184,10 +197,10 @@ void initialize() {
 
        while (true) {
            // print robot location to the brain screen
-           pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
-           pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), flexWheelIntake.get_temperature()); // heading
+        //    pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
+        //    pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), chain.get_temperature()); // heading
         //    pros::lcd::print(6, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(), ringsort.get_hue());
-        //    pros::lcd::print(7, "Intake Speed: %i  ", flexWheelIntake.get_actual_velocity());
+        //    pros::lcd::print(7, "Intake Speed: %i  ", chain.get_actual_velocity());
         //    // log position telemetry
 
             
@@ -325,7 +338,7 @@ void competition_initialize() {
 
 
 void stop() {
-   pros::delay(2000);flexWheelIntake.move(0);pros::delay(1000000);
+   pros::delay(2000);chain.move(0);pros::delay(1000000);
 }
 
 
@@ -425,224 +438,9 @@ void lbLater() {
     pros::delay(750);
     armStagesOneRing();
 }
-void getMogo() {
-    mogo.set_value(1);
-    pros::delay(300);
-}
+
 
 void intakeLBT() {intakeLB();}
-
-
-
-
-
-
-void bottomRIGHT() {
-
-    // get mogo
-
-    move_forward(14, 750);
-    chassis.turnToHeading(-90, 500, {}, false);
-    move_forward(-21, 750);
-
-    pros::delay(50);
-    getMogo();
-    // // Score the first ring
-    chassis.turnToHeading(0, 600, {}, false);
-    intake = 100;
-    move_forward(20, 1000);
-
-    // // far ring
-    chassis.turnToHeading(27, 400, {}, false);
-    move_forward(53, 3000);
-
-    pros::delay(300);
-
-    // // Wall stake preerpation
-    chassis.turnToHeading(153, 1000, {}, false);
-    armStagesOneRing();
-    move_forward(27, 1000);
-    chassis.turnToHeading(90, 500, {}, false);
-
-    // pros::delay(300);
-    pros::Task lbTask(intakeLBT);
-
-    // Wall stkae    
-    move_forward(10, 1000, false, {.maxSpeed= 50});
-
-    armStagesOneRing();
-    move_forward(-13, 750, false);
-    pros::Task armStage(armStagesOneRing);
-
-    // Get the 3 rings 
-    chassis.turnToHeading(177, 1000, {}, false);
-    intake=100;
-    move_forward(54, 2500, false, {.maxSpeed=105});
-    pros::delay(500);
-
-    chassis.turnToHeading(55, 750, {}, false);
-    move_forward(10, 500);
-    pros::delay(300);
-
-    chassis.turnToHeading(-25, 500, {}, false);
-    pros::delay(200);
-    mogo.set_value(0);
-    move_forward(-18, 500);
-    move_forward(9, 300);
-
-    chassis.turnToHeading(85, 750, {}, false);
-    move_forward(20, 800, false, {.maxSpeed=50});
-
-    // // Turn for 2nd 
-
-
-
-}
-
-void bottomLEFT() {
-
-    // Get the mogo
-    move_forward(-72, 3000, false);
-    move_forward(-10, 400, false, {.maxSpeed=80});
-    getMogo();
-    chassis.turnToHeading(5, 500, {}, false);
-
-    // Score first ring
-    intake = 100;
-    move_forward(23, 1000);
-
-    // Wall stake preparation
-    chassis.turnToHeading(-57, 500, {}, false);
-    move_forward(36.5, 1000);    
-    armStagesOneRing();
-    intake = 100;
-    chassis.turnToHeading(-90, 500, {}, false);
-
-    pros::Task lbTask(intakeLBT);
-
-    // Wall stkae    
-    move_forward(10, 900, false, {.maxSpeed=50});
-
-    armStagesOneRing();    
-    move_forward(-11, 900, true);
-    pros::Task yes(armStagesOneRing);
-     
-    // Get the far ring
-    chassis.turnToHeading(0, 450, {}, false);
-    intake = 100;
-    move_forward(28, 1000);
-
-    // Get the 3 rings 
-    chassis.turnToHeading(-176, 1000, {}, false);
-    move_forward(83.5, 2000, false, {.maxSpeed=100});
-    pros::delay(300);
-    move_forward(-4, 400);
-
-    chassis.turnToHeading(-45, 500, {}, false);
-    move_forward(20.5, 1000);
-    pros::delay(100);
-
-    chassis.turnToHeading(20, 1000, {}, false);
-    mogo.set_value(0);
-    move_forward(-16, 900);
-    move_forward(4, 400);
-}
-void getRingIntoLB() {
-    pros::delay(100);
-    armStagesOneRing();
-    pros::delay(500);
-    intake = 100;
-    pros::delay(1000);
-    intake = 0;
-    intakeLB();
-}
-
-void TOPLEFT() {
-    
-    intake = 0;
-    chassis.turnToHeading(0, 500, {}, false);
-
-    move_forward(72, 3000);
-
-    chassis.turnToHeading(90, 500, {}, false);
-
-    // Intake the ring    
-    move_forward(20, 800);    
-    intake = 100;    
-    pros::Task grib(getRingIntoLB);
-    move_forward(4, 500);
-
-    // Grab the mogo
-    chassis.turnToHeading(-136, 700, {}, false);    
-
-    move_forward(-30, 2000, false, {.maxSpeed=70});
-    getMogo();
-    pros::delay(100000000);
-
-    // Score alliance stake
-    chassis.turnToHeading(0, 750, {}, false);
-    move_forward(28, 1000, false, {.maxSpeed=70}); 
-    pros::delay(100);   
-    allianceStakeCode();
-    pros::delay(50);
-    armStagesOneRing();
-    pros::delay(100);    
-    pros::Task yes(armStagesOneRing);
-    move_forward(-4, 500, false);
-    intake = 100;
-    move_forward(-2, 400);
-
-
-
-}
-
-
-
-void topRIGHT() {
-    // Get the far ring
-    chassis.turnToHeading(130, 700, {}, false);
-    move_forward(34, 1000);
-    
-    // Get the 3 rings in the corner
-    chassis.turnToHeading(40, 500, {}, false);
-    move_forward(28, 1000);
-    move_to_relative_point(8.2, -15, 1000, false, {.forwards=false});
-    chassis.turnToHeading(10, 800, {}, false);
-    doinker.set_value(1);
-    // move_forward(12, 1000);
-    // chassis.turnToHeading(-135, 400, {}, false);
-    // mogo.set_value(0);
-    // move_forward(-18, 1000);
-
-}
-
-
-void skills() {
-    // Score the aliance stake
-    intake = 100;
-    pros::delay(750);
-    intake = 0;
-
-    /* BOTTOM RIGHT CORNER */ 
-    // bottomRIGHT();    
-
-    /* BOTTOM LEFT CORNER */
-    chassis.setPose(53, 27, 90);
-    bottomLEFT();
-
-    /* TOP LEFT CORNER */
-    TOPLEFT();
-
-    /* TOP RIGHT CORNER */
-    topRIGHT();
-
-    pros::delay(2000);
-    intake = 0;
-}
-
-
-
-
 
 
 
@@ -657,22 +455,18 @@ void skills() {
 
 void autonomous() { 
 
-    // skills();
+    // rd::Selector selector({    
+    //     {"Red Ring Side", leftRed, "", 0},
+    //     {"Red Mogo Rush", rightRed, "", 12},
+    //     {"Blue Mogo Rush", leftBLUE, "", 240},
+    //     {"Blue Ring Side", rightBLUE, "", 200},
+    //     {"Solo AWP Red", soloAWPRed, "", 350},
+    
+    // });
 
-    // team 0 = red, team 1 = blue
-    // false is left, true is right
-    // // Auton selector
-    // if      (team == 0 && auton == 0) { leftRed(); }
-    // else if (team == 0 && auton == 1)  { rightRed(); }
-    // else if (team == 1 && auton == 0) { leftBLUE(); }
-    // else if (team == 1 && auton == 1) { rightBLUE(); }
-    // else if (team == 0 && auton == 2) { soloAWPRed(); };
-    // else if (team == 1 && auton == 2) { soloAWPBlue(); };
-    // pros::delay(1000);
-    // chassis.setPose(0, 0, 0);
+    // Teams
 
-    skills();
-    // chassis.turnToHeading(180, 1000000);
+    selector.run_auton();
 }
 
 int conveyTurnAmt = 0;
@@ -713,13 +507,25 @@ void hang() {
 
 
 
+/* Setup the ROBODASH setups and team */
+void rdsetup() {
 
-
+    if (selector.get_auton().value().name == "Red Ring Side" || selector.get_auton().value().name == "Red Mogo Rush" || selector.get_auton().value().name == "Solo AWP Red") {
+        team = 0;
+        console.println("Team is Red");
+    } else {
+        team = 1;
+        console.println("Team is Blue");
+    }
+    
+    rd::Image catIMG("/usd/cat.bin", "Cat PNG");
+    catIMG.focus();
+}
 // Driver code
 void opcontrol() {
    // Before the while true loop, set the arm motor to brake mode instead of coast to prevent slipping
     // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    // onmatch = true;
+    onmatch = true;
 
     // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
     // // Main while true loop
@@ -740,9 +546,8 @@ void opcontrol() {
 
     // pros::delay(1000000);
 
+    pros::Task rdsetupTask(rdsetup);
 
-
-    catIMG.focus();
     while (true) {
         // Get Values of the controller
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -772,7 +577,7 @@ void opcontrol() {
 
 
 
-        int downArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN);
+        int downArrow = controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
         int leftArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT);
         int upArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
         int rightArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
@@ -808,7 +613,14 @@ void opcontrol() {
 
         }
         if (leftArrow) {
-            controller.print(2, 0, "Testing drive...          ");
+            if (team == 0 ) {
+                team = 1;
+                controller.print(2, 0, "Blue Team      ");
+            } else {
+                team = 0;
+                controller.print(2, 0, "Red Team     ");
+            }
+            // controller.print(2, 0, "Testing drive...          ");
             // test_drive(); // Hangs code
         }
 
@@ -821,6 +633,8 @@ void opcontrol() {
         if (x) {
             manualarm = !manualarm;
             armMotor.tare_position();
+            LBtracking.reset();
+            LBtracking.reset_position();            
             controller.print(2, 0, "Manual Arm %s          ", doinkerValue ? "ON" : "OFF");
         }
 
@@ -830,9 +644,11 @@ void opcontrol() {
         }
 
 
-        if (downArrow && !movingArmMotor) {
+        if (downArrow) {
             // pros::Task armmotortask2(armStagesTwoRing);
-            rollers.move(-127);
+            rollerIntake = 127;
+        } else {
+            rollerIntake = 0;
         }
 
 

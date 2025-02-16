@@ -71,6 +71,7 @@ void disabled(void);
 void competition_initialize(void);
 void opcontrol(void);
 inline int intake = 0;
+inline int rollerIntake = 0;
 
 
 
@@ -80,7 +81,7 @@ inline pros::MotorGroup right_motors({17, 19, 18}, pros::MotorGearset::blue);
 // inline pros::Motor chain(-12, pros::MotorGearset::blue, pros::MotorEncoderUnits::degrees);
 // inline pros::Motor flexWheels(5, pros::MotorGearset::green);
 
-inline pros::MotorGroup flexWheelIntake({-12, -4});
+inline pros::Motor chain(-12);
 inline pros::Motor rollers(-4);
 
 
