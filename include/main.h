@@ -352,6 +352,79 @@ inline void move_to_relative_point(float x, float y, int timeout, bool async = f
 }
 
 
+/* 
+Turns to a specified angle and stops when it is around that range.
+The normal chassis.turnToHeading requires full timeout in order to move onto the next move, since our PID is bad.
+*/
+inline void quick_turn_to(float theta, int maxTimeout = 2000, float errorRange = 1, lemlib::TurnToHeadingParams params = {}) {
+    chassis.turnToHeading(theta, maxTimeout, params, true);
+
+    int maxWhileLoops = maxTimeout / 5;    
+
+    while (maxWhileLoops > 0) {
+        float currentAngle = chassis.getPose().theta;
+        float error = std::abs(theta - currentAngle);
+        
+        // If the current angle is within the error range then stop
+        if (error <= errorRange) {
+            chassis.cancelMotion();
+            break;
+        }
+        maxWhileLoops--;
+        pros::delay(5);
+    }
+}
+
+/* 
+Just like the quick_turn_to function, this will attempt to move the robot to x inches and stop when it reaches the error range.
+The purpose is to provide quicker movements at the cost of accuracy.
+E.g. you can have 2 "chained" move forward functions like:
+
+void autonomous() {
+    quick_move_forward(5);
+    quick_turn_to(90);
+    quick_move_forward(5);
+}
+*/
+inline void quick_move_forward(float inches, int maxTimeout = 5000, float errorRange = 0.5, lemlib::MoveToPointParams params = {}) {
+    bool forwards = true;
+
+    if (inches < 0) {
+        forwards = false;
+    } 
+
+    params.forwards = forwards;
+
+    double angle = -(chassis.getPose(true).theta) + M_PI_2;
+
+    float x = cos(angle) * inches + chassis.getPose().x;
+    float y = sin(angle) * inches + chassis.getPose().y;
+    
+    chassis.moveToPoint(x, y, maxTimeout, params, {});
+
+    int maxWhileLoops = maxTimeout / 5;    
+
+    while (maxWhileLoops > 0) {
+        float currentX = chassis.getPose().x;
+        float currentY = chassis.getPose().y;
+
+        double xDiff = std::abs(x - currentX);
+        double yDiff = std::abs(y - currentY);
+
+        float error = std::sqrt(xDiff * xDiff + yDiff * yDiff);
+        
+        // If the current distance is within the error range then stop
+        if (error <= errorRange) {
+            chassis.cancelMotion();
+            break; // Once the while loop is broken, the function completes
+        }
+        maxWhileLoops--;
+        pros::delay(5);
+    }
+
+}
+
+// homemade PID???
 
 #ifdef __cplusplus
 }
