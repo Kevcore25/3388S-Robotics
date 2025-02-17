@@ -24,6 +24,7 @@
  * E_CONTROLLER_MASTER is pedantically correct within the PROS styleguide, but
  * not convenient for most student programmers.
  */
+#include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/abstract_motor.hpp"
 #include "pros/motors.h"
 #define PROS_USE_SIMPLE_NAMES
@@ -101,6 +102,8 @@ inline pros::adi::DigitalOut hangADI('H');
 inline pros::Rotation horizontalTrackingWheel(-10);
 inline pros::Rotation LBtracking(-2);
 
+inline pros::Rotation verticalTrackingWheel(20);
+
 
 inline pros::Optical ringsort(3);
 
@@ -139,7 +142,7 @@ inline lemlib::Drivetrain drivetrain(
    11.8,
    lemlib::Omniwheel::NEW_275,
    400,
-   1000
+   8
 );
 
 
@@ -171,15 +174,18 @@ inline lemlib::ControllerSettings angular_controller(2, // proportional gain (kP
  // lemlib::TrackingWheel vertical_tracking_wheel(&vs, lemlib::Omniwheel::NEW_275, -6);
 
 
-inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -1.6);
+ inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -1.6);
+//  inline lemlib::TrackingWheel verticalTracking(&verticalTrackingWheel, lemlib::Omniwheel::NEW_2, 0.8);
 
-inline lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
-                            nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
-                            &horizontalTracking, // horizontal tracking wheel 1
-                            nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
-                            &imu//&imu // inertial sensor
-);
-
+ // to not break, disable vertical tracking, set rpm to 400, horizontal tracking wheel to -1.6
+ 
+ inline lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
+                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
+                             &horizontalTracking, // horizontal tracking wheel 1
+                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
+                             &imu//&imu // inertial sensor
+ );
+ 
 
 
 

@@ -11,6 +11,11 @@ inline void resetLB() {
     pros::Task rsttask(resetLBPos);
 }
 
+inline void resetBackLB(){
+    LBmoveToAngle(-30, 100, 5, 3000);
+    resetLBPos();
+}
+
 
 inline void turn(float degrees, int timeout, bool async = false) {
    float angle = chassis.getPose().theta + degrees;
@@ -84,67 +89,27 @@ inline void leftBLUE() {
 // POV: When realtive move makes your auton code much faster than before for no reason
 // and somehow makes it more consistent wtf??
 inline void rightBLUE() {
-    chassis.moveToPoint(0, 2.6, 200);
-    chassis.turnToHeading(-45, 400);
+    LBmoveToAngle(170, 100, 5, 2000);
 
-    // Raise LB
-    LBmoveToAngle(110, 50, 2, 700);
-    LBmoveToAngle(210, 100, 2, 300);
+    chassis.moveToPoint(20, -28, 1500, {.forwards=false, .maxSpeed=100}, false);
 
-    // 
-    chassis.moveToPoint(8, -4, 500, {.forwards=false}, false);
-    LBmoveToAngle(-100, 100, 5, 500);
+    pros::Task backLB(resetBackLB);
 
-    // // Doinker the ring ikn the middle and socr eit
-    // chassis.turnToHeading(0, 350, {}, false);
-    // doinker.set_value(1);
-    // pros::delay(200);
-    // move_forward(-8, 300, false);
-    // pros::delay(100);
-    // doinker.set_value(0);
-    // pros::delay(50);
-
-    // RST LB position
-    pros::Task rsttask(resetLBPos);
-
-    // // Get the mogo
-    chassis.moveToPoint(31, -16, 1200, {.forwards=false}, false);
     getMogo();
 
-    chassis.turnToHeading(180, 700, {}, false);
+    chassis.turnToHeading(160, 1000, {}, false);
 
+    intake=100;
 
-    intake = 100;
-    
+    move_forward(24, 1000);
 
-    // middle first
-    move_forward(16, 700,false);
-    pros::delay(300);
+    move_forward(-14, 1000);
 
-    chassis.turnToHeading(83, 700, {}, false);
+    chassis.turnToHeading(195, 1000, {}, false);
 
-    move_forward(14, 1000, false, {.maxSpeed=100});
+    move_forward(27, 1000);
 
-    pros::delay(300);
-
-    move_forward(-10, 700, false, {});
-
-    chassis.turnToHeading(120, 700, {}, false);
-
-    move_forward(13, 700, false);
-
-    pros::delay(300);
-
-    move_forward(-45, 1500, false);
-    intake = 0; 
-
-    chassis.turnToHeading(0, 700, {}, false);
-
-    move_forward(12, 700, false);
-
-    chassis.turnToHeading(90, 500, {}, false);
-
-    move_forward(30, 3000, false, {.maxSpeed=50});
+    move_forward(-20, 1000);
 }
 
 
