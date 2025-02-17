@@ -376,7 +376,7 @@ void armStagesOneRing() {
         moreLB = false;
 
     } else if (armMotorCounter == 2) {
-        LBmoveToAngle(-2, 100, 2, 1000);
+        LBmoveToAngle(-2, 100, 2, 750);
         armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         // resetLBPos();
         armMotorCounter = -1;

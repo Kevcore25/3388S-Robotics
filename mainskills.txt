@@ -455,17 +455,17 @@ void bottomRIGHT() {
     // // far ring
     chassis.turnToHeading(27, 400, {}, false);
     move_forward(53, 3000);
-
-    pros::delay(300);
+    armStagesOneRing();
 
     // // Wall stake preerpation
     chassis.turnToHeading(153, 1000, {}, false);
-    armStagesOneRing();
+    intake = 0;
+    rollers = 100;
     move_forward(27, 1000);
     chassis.turnToHeading(90, 500, {}, false);
 
     // pros::delay(300);
-    pros::Task lbTask(intakeLBT);
+    // pros::Task lbTask(intakeLBT);
 
     // Wall stkae    
     move_forward(10, 1000, false, {.maxSpeed= 50});
@@ -624,17 +624,17 @@ void skills() {
     intake = 0;
 
     /* BOTTOM RIGHT CORNER */ 
-    // bottomRIGHT();    
+    bottomRIGHT();    
 
     /* BOTTOM LEFT CORNER */
-    chassis.setPose(53, 27, 90);
-    bottomLEFT();
+    // chassis.setPose(53, 27, 90);
+    // bottomLEFT();
 
     /* TOP LEFT CORNER */
-    TOPLEFT();
+    // TOPLEFT();
 
     /* TOP RIGHT CORNER */
-    topRIGHT();
+    // topRIGHT();
 
     pros::delay(2000);
     intake = 0;
