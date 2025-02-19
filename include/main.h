@@ -362,7 +362,7 @@ inline void move_to_relative_point(float x, float y, int timeout, bool async = f
 Turns to a specified angle and stops when it is around that range.
 The normal chassis.turnToHeading requires full timeout in order to move onto the next move, since our PID is bad.
 */
-inline void quick_turn_to(float theta, int maxTimeout = 2000, float errorRange = 1, lemlib::TurnToHeadingParams params = {}) {
+inline void quick_turn_to(float theta, int maxTimeout = 2000, float errorRange = 1.5, lemlib::TurnToHeadingParams params = {}) {
     chassis.turnToHeading(theta, maxTimeout, params, true);
 
     int maxWhileLoops = maxTimeout / 5;    

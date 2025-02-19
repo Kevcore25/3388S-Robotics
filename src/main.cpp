@@ -13,7 +13,7 @@
 #include "autons.hpp"
 
 //Bond Liu is an opp and a loser
-int team = 1;
+int team = 0;
 int auton = 0;
 // Intake is a percentage, that means 100 is 127
 
@@ -22,7 +22,7 @@ std::string autonDisplay[3] = {"left", "right", "awp"};
 std::string teamDisplay[3] = {"Red", "Blue", "None"};
 
 rd::Selector selector({    
-    {"Red Ring Side", leftRed, "", 0},
+    {"Red Ring Side", leftRED, "", 0},
     {"Red Mogo Rush", rightRed, "", 12},
     {"Blue Mogo Rush", leftBLUE, "", 240},
     {"Blue Ring Side", rightBLUE, "", 200},
@@ -115,8 +115,8 @@ void flexWheelIntakeFunc() {
         if (!ejecting){
 
             if (prox >= 200 && (
-                (team == 0 && hue >= 200 && hue <= 250) ||
-                (team == 1 && hue <= 25)
+                (team == 0 && hue >= 200 && hue <= 260) ||
+                (team == 1 && hue <= 30)
             )) {
                 // console.println("Detect ring");
                 pros::lcd::print(6, "detect ring   ");
@@ -483,7 +483,12 @@ void intakeLBT() {intakeLB();}
 
 
 void autonomous() { 
-    
+    // quick_move_forward(10);
+    // quick_turn_to(50);
+    // quick_turn_to(90);
+    // quick_turn_to(180);
+
+    // quick_move_forward(4);
 
     // rd::Selector selector({    
     //     {"Red Ring Side", leftRed, "", 0},
@@ -496,7 +501,7 @@ void autonomous() {
 
     // Teams
 
-    rightBLUE();
+    rightRed();
     // selector.run_auton();
 }
 
