@@ -105,7 +105,7 @@ inline pros::Rotation LBtracking(-2);
 inline pros::Rotation verticalTrackingWheel(20);
 
 
-inline pros::Optical ringsort(3);
+inline pros::Optical ringsort(13);
 
 
 

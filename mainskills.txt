@@ -64,7 +64,7 @@ void ejectring() {
     // pros::lcd::print(9, "INTAKE STOP");
 
     // Keep detecting until the hole is passed
-    while (ringsort.get_proximity() >= 120) {
+    while (ringsort.get_proximity() >= 200) {
         pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
     }
 
@@ -73,6 +73,7 @@ void ejectring() {
     pros::delay(150);
     // LBmoveToAngle(0);
 
+    chain.move(127);
 
     // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
@@ -440,6 +441,12 @@ void getMogo() {
 void intakeLBT() {intakeLB();}
 void intakeLBT1() {intakeLB(1);}
 
+void delayedArmStage() {
+    pros::delay(750);
+    armStagesOneRing();
+
+};
+
 
 
 
@@ -450,8 +457,8 @@ void bottomRIGHT() {
     // get mogo
 
     move_forward(14, 750);
-    chassis.turnToHeading(-90, 750, {}, false);
-    move_forward(-21, 750);
+    chassis.turnToHeading(-90, 1000, {}, false);
+    move_forward(-21, 1000);
 
     pros::delay(50);
     getMogo();
@@ -463,12 +470,12 @@ void bottomRIGHT() {
     // // far ring
     chassis.turnToHeading(30, 400, {}, false);   
 
+    pros::Task armStage1(delayedArmStage);
+
     move_forward(53, 3000);
 
-    pros::Task armStage1(armStagesOneRing);
-
     // // Wall stake preerpation
-    chassis.turnToHeading(156, 1000, {}, false);
+    chassis.turnToHeading(150, 1000, {}, false);
     rollerIntake = 100;
     move_forward(25, 1000);
     chassis.turnToHeading(90, 500, {}, false);
@@ -491,7 +498,7 @@ void bottomRIGHT() {
     
     intake=100;
     
-    move_forward(60, 2500, false, {.maxSpeed=90});
+    move_forward(56, 2500, false, {.maxSpeed=80});
 
     chassis.turnToHeading(55, 750, {}, false);
     move_forward(10, 500);
@@ -548,7 +555,7 @@ void bottomLEFT() {
 
     // Get the 3 rings 
     chassis.turnToHeading(-176, 1100, {}, false);
-    move_forward(79.5, 2000, false, {.maxSpeed=85});
+    move_forward(79.5, 3000, false, {.maxSpeed=85});
     move_forward(-4, 400);
 
     chassis.turnToHeading(-45, 500, {.maxSpeed=90}, false);
@@ -599,7 +606,7 @@ void TOPLEFT() {
     move_forward(28, 1000, false, {.maxSpeed=75}); 
     pros::delay(100);   
     allianceStakeCode();
-    pros::delay(50);
+    pros::delay(100);
     armStagesOneRing();
     pros::delay(100);
     rollerIntake = 100;
@@ -631,11 +638,9 @@ void topRIGHT() {
 
 
     chassis.moveToPose(42, 30.5, 90, 2000, {.lead=0.65}, false);
-    pros::delay(750);
-    // intake = 0;
+    intake = 0;
     // pros::delay(500);
     chassis.turnToHeading(200, 800, {}, false);    
-    intake = 0;
 
     mogo.set_value(0);
     move_forward(-30, 1000);    
@@ -655,11 +660,12 @@ void topRIGHT() {
 }
 
 void finalHang(){
+
     // Go hang. 
     hangADI.set_value(1);
-    chassis.turnToHeading(-45, 500, {}, false);
-    move_forward(-40, 2000, false, {});
-    move_forward(-10, 2500, false, {.earlyExitRange=0});
+    chassis.turnToHeading(-30, 1000, {}, false);
+    move_forward(-50, 2000, false, {});
+    move_forward(-10, 2500, false, {.minSpeed=40});
 }
 
 
@@ -667,7 +673,7 @@ void skills() {
     // Score the aliance stake
     intake = 100;
     pros::delay(750);
-    intake = -100;
+    intake = 0;
 
     /* BOTTOM RIGHT CORNER */ 
     bottomRIGHT();    
@@ -728,11 +734,6 @@ void autonomous() {
 
 int conveyTurnAmt = 0;
 
-
-
-
-
-
 // Set a bunch of values
 bool fwSwitch = 0; // Flex Wheel intake SWITCH
 bool mogoValue = false; // Mogo Value switch
@@ -745,26 +746,15 @@ bool usebrake = false;
 bool manualarm = false;
 int flexwheelstuckamt = 0;
 
-
-
-
 bool hangbool = false;
 void hang() {
    hangbool = !hangbool;
    if (hangbool) {
        hangADI.set_value(1);
-
-
-
-
    } else {
        hangADI.set_value(0);
    }
 }
-
-
-
-
 
 // Driver code
 void opcontrol() {
@@ -791,51 +781,31 @@ void opcontrol() {
 
     // pros::delay(1000000);
 
-
-
     catIMG.focus();
+
     while (true) {
         // Get Values of the controller
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
-
-
-
-
-
-
-
         int r1 = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1);
         int r2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
         int l1 = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1);
         int l2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
-
-
-
 
         int a = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A);
         int b = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B);
         int x = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X);
         int y = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y);
 
-
-
-
         int downArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_DOWN);
         int leftArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT);
         int upArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
         int rightArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
 
-
-
-
         // Should manual arm be on, arm motors can be moved using the joystick
         if (manualarm && !nomovearm) {armMotor.move(-rightY);}
-
-
-
 
         // Mogo mech code
         if (r1) {
@@ -848,21 +818,17 @@ void opcontrol() {
             controller.print(2, 0, "Arm moving...          ");
         }
         // Buttons
-        if (a) {
+        if (b) {
             doinkerValue = !doinkerValue;
             doinker.set_value(doinkerValue);
             // controller.clear_line(2);
             controller.print(2, 0, "Doinker %s          ", doinkerValue ? "ON" : "OFF");
-
-
-
-
         }
+
         if (leftArrow) {
             controller.print(2, 0, "Testing drive...          ");
             // test_drive(); // Hangs code
         }
-
 
         if (upArrow) {
             usebrake = !usebrake;
@@ -875,22 +841,20 @@ void opcontrol() {
             controller.print(2, 0, "Manual Arm %s          ", doinkerValue ? "ON" : "OFF");
         }
 
-
         if (y) {
             pros::Task armmotorhangtask(&hang);
         }
-
 
         if (downArrow && !movingArmMotor) {
             // pros::Task armmotortask2(armStagesTwoRing);
             rollers.move(-127);
         }
 
-
         if (rightArrow) {
             // pros::Task armmotortask3(allianceStakeCode);
             allianceStakeCode();
         }
+
         // If disconnected, set the bot to be hold mode just in case
         if (controller.is_connected()) {
             if (usebrake) {
@@ -898,62 +862,21 @@ void opcontrol() {
             } else {
                 chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
             }
-
-
-
-
         } else {
             chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
         }
-
-
-
 
         // Function to move the robot
         // arcade(leftY, rightX);
         chassis.arcade(leftY, rightX, false, 0.4);
 
-
-
-
         // intake
         intake = r2 * 100 + l2 * -100;
 
-
-
-
-
-
-
-
-
-
-
-
         // Delay to save resources. This also makes sure that code runs properly (e.g. 10 ticks = 100 milliseconds)
         pros::delay(10);
-
-
-
-
-        // // Debug
-        // debugStatCount++;
-        // if (debugStatCount >= 100) { // Runs every 1s
-        //     // Print Batery
-        //    controller.print(0, 0, "%i | %i | %i", fwmv, fwmv2, flexwheelstuckamt);
-
-
-
-
-        //     // Reset
-        //     debugStatCount = 0;
-
-
-
-
-        // }
     }
-    }
+}
 
 
 

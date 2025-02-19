@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "MAIN",
+    "project_name": "cpom",
     "target": "v5",
     "templates": {
       "LemLib": {
@@ -324,7 +324,7 @@
     },
     "upload_options": {
       "description": "driver",
-      "icon": "X",
+      "icon": "clawbot",
       "slot": 1
     },
     "use_early_access": false

@@ -13,7 +13,7 @@
 #include "autons.hpp"
 
 //Bond Liu is an opp and a loser
-int team = 2;
+int team = 1;
 int auton = 0;
 // Intake is a percentage, that means 100 is 127
 
@@ -66,19 +66,29 @@ bool onmatch = false;
 */
 
 bool ejecting = false;
+
+int ejectcounter = 0;
+
 void ejectring() {
     if (!onmatch) {
+            ejectcounter++;
          ejecting = true;
         // pros::lcd::print(9, "INTAKE STOP");
 
         // Keep detecting until the hole is passed
-        while (ringsort.get_proximity() >= 100) {
+        int bruh = 0;
+        while (ringsort.get_proximity() >= 200 && bruh < 100) {
+            bruh++;
             pros::delay(2); // Add a short delay. 2 is the minimum polling rate of the sensor so this should be 3
         }
+        // pros::delay(50);
+        // pros::delay(150);
+        // pros::delay(50);
 
         chain.move(-10);
 
-        pros::delay(150);
+        pros::delay(200);
+        pros::lcd::print(6, "nope");
 
         ejecting = false;
     }
@@ -98,52 +108,59 @@ void flexWheelIntakeFunc() {
    while (true) {
        // Spin the intake if on
        int intakespd = intake * 1.27;
-       chain.move(intakespd);
 
-       if (rollerIntake == 0) {
-            rollers.move(intakespd);
-       } else {
-            rollers.move(rollerIntake);
-       }
+        int prox = ringsort.get_proximity();
+        int hue = ringsort.get_hue();
+
+        if (!ejecting){
+
+            if (prox >= 200 && (
+                (team == 0 && hue >= 200 && hue <= 250) ||
+                (team == 1 && hue <= 25)
+            )) {
+                // console.println("Detect ring");
+                pros::lcd::print(6, "detect ring   ");
+
+                if (ejectcounter < 3) {pros::Task ertask(ejectring);}
+                // ejectring();
+            }
+            else {
+                if (ejectcounter > 0) {ejectcounter--;}
+
+                chain.move(intakespd);
+
+                if (rollerIntake == 0) {
+                    rollers.move(intakespd);
+                } else {
+                        rollers.move(rollerIntake);
+                }
+            
+
+                if (intakespd > 100 && (armMotorCounter == 0 && armMotorCounterDouble == 0 && alliancecounter == 0)) {
+                    fwamt++;
+                    if (fwamt > 250 && chain.get_actual_velocity() < 15 && yesfw < 200) {
+                        //    pros::lcd::print(5, "Actual velocity: %i",chain.get_actual_velocity());
+                        // Move it back then fwd again
+                        chain.move(-127);
+                        pros::delay(150);
+                        fwamt = 0;
+                        yesfw += 30;
+                    } else {
+                        // Ring sort function
+                        if (!onmatch){
+                                int hue = ringsort.get_hue();
+                        
+                        }
+                    }
 
 
-       // Montior for highest speed
-    // pros::lcd::print(5, "Actual velocity: %i %i %i",chain.get_actual_velocity(), fwamt, yesfw);
+                } else {
+                    fwamt = 0;
+                    if (yesfw > 0) {yesfw--;}
+                }
+            }
 
-
-       if (intakespd > 300 && (armMotorCounter == 0 && armMotorCounterDouble == 0 && alliancecounter == 0)) {
-           fwamt++;
-           int prox = ringsort.get_proximity();
-           if (fwamt > 250 && chain.get_actual_velocity() < 15 && yesfw < 200) {
-            //    pros::lcd::print(5, "Actual velocity: %i",chain.get_actual_velocity());
-               // Move it back then fwd again
-               chain.move(-127);
-               pros::delay(150);
-               fwamt = 0;
-               yesfw += 30;
-           } else {
-               // Ring sort function
-               if (!onmatch){
-               int hue = ringsort.get_hue();
-              
-               if (!ejecting && (
-                   (team == 0 && hue >= 200 && hue <= 270) ||
-                   (team == 1 && hue <= 30)
-               )) {
-                   if (prox >= 200) {
-                        ejectring();
-                   } // eject ring should be here
-               }
-               }
-           }
-
-
-       } else {
-           fwamt = 0;
-           if (yesfw > 0) {yesfw--;}
-       }
-
-
+        }
        // Save resources
        pros::delay(5);
    }
@@ -151,7 +168,7 @@ void flexWheelIntakeFunc() {
 
 
 void initialize() {
-//    pros::lcd::initialize(); // initialize brain screen
+   pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
     chassis.setPose(0.0, 0.0, 0.0);
 
@@ -183,7 +200,7 @@ void initialize() {
 
    ringsort.disable_gesture();
    ringsort.set_integration_time(3);
-   ringsort.set_led_pwm(30);
+   ringsort.set_led_pwm(50);
 
 
 //    pros::lcd::register_btn1_cb(on_center_button);
@@ -197,9 +214,10 @@ void initialize() {
 
        while (true) {
            // print robot location to the brain screen
-        //    pros::lcd::print(2, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
-        //    pros::lcd::print(4, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), chain.get_temperature()); // heading
-        //    pros::lcd::print(6, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(), ringsort.get_hue());
+           pros::lcd::print(1, "X: %.4f | Y: %.4f | D: %.4f    ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
+           pros::lcd::print(2, "T: %.0fC | %.0fC    ", armMotor.get_temperature(), chain.get_temperature()); // heading
+           pros::lcd::print(3, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(), ringsort.get_hue());
+           pros::lcd::print(4, "TEAM: %s", teamDisplay[team]);
         //    pros::lcd::print(7, "Intake Speed: %i  ", chain.get_actual_velocity());
         //    // log position telemetry
 
@@ -207,7 +225,7 @@ void initialize() {
            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
            controller.print(0, 0, "%f %f %f", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
         //    pros::lcd::print(3, "Arm Angle: %.2f   ", LBtracking.get_position()/100);
-
+            console.printf("On %s\n", teamDisplay[team]);
 
            if (!imu.is_installed()) {
                imudc = true;
@@ -216,7 +234,17 @@ void initialize() {
                controller.print(2, 0, "IMU Disconnected");
            }
 
+            try {
+                // if (selector.get_auton().value().name == "Red Ring Side" || selector.get_auton().value().name == "Red Mogo Rush" || selector.get_auton().value().name == "Solo AWP Red") {
+                //     team = 0;
+                // } else {
+                //     team = 1;
+                // }
+            } catch (int e) {
 
+            } 
+            
+        
            // delay to save resources
            pros::delay(100);
 
@@ -455,6 +483,7 @@ void intakeLBT() {intakeLB();}
 
 
 void autonomous() { 
+    
 
     // rd::Selector selector({    
     //     {"Red Ring Side", leftRed, "", 0},
@@ -520,14 +549,14 @@ void rdsetup() {
         console.println("Team is Blue");
     }
     
-    rd::Image catIMG("/usd/cat.bin", "Cat PNG");
-    catIMG.focus();
+    // rd::Image catIMG("/usd/cat.bin", "Cat PNG");
+    // catIMG.focus();
 }
 // Driver code
 void opcontrol() {
    // Before the while true loop, set the arm motor to brake mode instead of coast to prevent slipping
     // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    onmatch = true;
+    // onmatch = true;
 
     // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
     // // Main while true loop
@@ -548,7 +577,7 @@ void opcontrol() {
 
     // pros::delay(1000000);
 
-    pros::Task rdsetupTask(rdsetup);
+    // pros::Task rdsetupTask(rdsetup);
 
     while (true) {
         // Get Values of the controller

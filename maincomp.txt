@@ -205,6 +205,7 @@ void initialize() {
 
             
            lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
+           controller.print(0, 0, "%f %f %f", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
         //    pros::lcd::print(3, "Arm Angle: %.2f   ", LBtracking.get_position()/100);
 
 
@@ -466,7 +467,8 @@ void autonomous() {
 
     // Teams
 
-    selector.run_auton();
+    rightBLUE();
+    // selector.run_auton();
 }
 
 int conveyTurnAmt = 0;

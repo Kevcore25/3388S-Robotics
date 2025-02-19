@@ -97,19 +97,27 @@ inline void rightBLUE() {
 
     getMogo();
 
-    chassis.turnToHeading(160, 1000, {}, false);
+    chassis.turnToHeading(170, 1000, {}, false);
 
     intake=100;
 
-    move_forward(24, 1000);
+    move_forward(26, 1000);
 
     move_forward(-14, 1000);
 
-    chassis.turnToHeading(195, 1000, {}, false);
+    chassis.turnToHeading(183, 1000, {}, false);
 
-    move_forward(27, 1000);
+    move_forward(26, 1000);
 
-    move_forward(-20, 1000);
+    move_forward(-28, 1000);
+
+    chassis.turnToHeading(200, 500, {}, false);
+
+    move_forward(17, 700);
+
+    move_forward(-30, 1500);
+
+
 }
 
 
