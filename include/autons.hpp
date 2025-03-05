@@ -128,7 +128,7 @@ inline void rightBLUE() {
     // Get 2 rings
     quick_turn_to(-135, 1000);
     intake=100;
-    chassis.moveToPose(-54, -57, -90, 4000, {.lead=0.7,.minSpeed=50}, false);
+    chassis.moveToPose(-54, -56, -90, 4000, {.lead=0.7,.minSpeed=50}, false);
     pros::delay(1000);
     // chassis.moveToPose(-18, -30, -180, 2000, {.forwards=false, .lead=0.7, .minSpeed=70});
     move_forward(-9, 500);
@@ -159,7 +159,7 @@ inline void leftRED() {
     // Get 2 rings
     quick_turn_to(135, 1000);
     intake=100;
-    chassis.moveToPose(54, -57, 90, 3000, {.lead=0.7,.minSpeed=50}, false);
+    chassis.moveToPose(54, -56, 90, 3000, {.lead=0.7,.minSpeed=50}, false);
     pros::delay(2000);
 
     // Get the 1 ring in the middle of the field 
@@ -235,7 +235,7 @@ inline void rightRed(){
 
     // Get the mogo
     doinker.set_value(1);
-    chassis.moveToPoint(1.5, 40, 2000, {}, false);
+    chassis.moveToPoint(3, 40, 2000, {}, false);
     move_forward(-26, 2000);
     doinker.set_value(0);
 
@@ -246,15 +246,18 @@ inline void rightRed(){
     
     // Prepare for the grabbed mogo
     pros::delay(500);
-    chassis.moveToPose(-2, 8, 0, 2000, {}, false);    
+    chassis.moveToPose(-12, 28, 0, 2000, {}, false);    
     mogo.set_value(0);
     chassis.moveToPose(4, 36, -160, 3000, {.forwards=false}, false);
     getMogo();
     move_forward(4, 500);
-    chassis.swingToPoint(6, 41, lemlib::DriveSide::LEFT, 2000);
+    chassis.swingToPoint(7, 37, lemlib::DriveSide::LEFT, 2000);
 
-    chassis.turnToHeading(0, 1000, {}, false);
-    move_forward(-18, 2000, false, {.maxSpeed=80});
+    // chassis.turnToHeading(0, 1000, {}, false);
+    mogo.set_value(0);
+
+    chassis.moveToPose(-2, 36, -80, 2000);
+    // move_forward(-8, 2000, false, {.maxSpeed=80});
 
 }
 

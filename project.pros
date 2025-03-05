@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "skills",
+    "project_name": "Competition",
     "target": "v5",
     "templates": {
       "LemLib": {
@@ -323,9 +323,9 @@
       }
     },
     "upload_options": {
-      "description": "driver",
-      "icon": "pizza",
-      "slot": 2
+      "description": "skills",
+      "icon": "X",
+      "slot": 1
     },
     "use_early_access": false
   }

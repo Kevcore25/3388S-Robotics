@@ -161,7 +161,7 @@ void flexWheelIntakeFunc() {
 }
 
 void initialize() {
-  pros::lcd::initialize(); // initialize brain screen
+//   pros::lcd::initialize(); // initialize brain screen
   chassis.calibrate();     // calibrate sensors
   chassis.setPose(0.0, 0.0, 0.0);
 
@@ -197,14 +197,14 @@ void initialize() {
 
     while (true) {
       // print robot location to the brain screen
-      pros::lcd::print(1, "X: %.4f | Y: %.4f | D: %.4f    ",
-                       chassis.getPose().x, chassis.getPose().y,
-                       chassis.getPose().theta);
-      pros::lcd::print(2, "T: %.0fC | %.0fC    ", armMotor.get_temperature(),
-                       chain.get_temperature()); // heading
-      pros::lcd::print(3, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(),
-                       ringsort.get_hue());
-      pros::lcd::print(4, "TEAM: %s", teamDisplay[team]);
+    //   pros::lcd::print(1, "X: %.4f | Y: %.4f | D: %.4f    ",
+    //                    chassis.getPose().x, chassis.getPose().y,
+    //                    chassis.getPose().theta);
+    //   pros::lcd::print(2, "T: %.0fC | %.0fC    ", armMotor.get_temperature(),
+    //                    chain.get_temperature()); // heading
+    //   pros::lcd::print(3, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(),
+    //                    ringsort.get_hue());
+    //   pros::lcd::print(4, "TEAM: %s", teamDisplay[team]);
       //    pros::lcd::print(7, "Intake Speed: %i  ",
       //    chain.get_actual_velocity());
       //    // log position telemetry

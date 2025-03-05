@@ -474,8 +474,8 @@ void bottomRIGHT() {
 
     move_forward(53, 3000);
 
-    // // Wall stake preerpation
-    chassis.turnToHeading(150, 1000, {}, false);
+    // // Wall stake preerpation b
+    chassis.turnToHeading(160, 1000, {}, false);
     rollerIntake = 100;
     move_forward(25, 1000);
     chassis.turnToHeading(90, 500, {}, false);
@@ -505,6 +505,7 @@ void bottomRIGHT() {
 
     chassis.turnToHeading(-25, 500, {}, false);
     move_forward(-18, 500);
+    intake=-100;
     mogo.set_value(0);
     move_forward(9, 300);
 
@@ -530,13 +531,14 @@ void bottomLEFT() {
     move_forward(23, 1000);
 
     // Wall stake preparation
-    chassis.turnToHeading(-57, 500, {}, false);
+    chassis.turnToHeading(-56, 500, {}, false);
     pros::Task armStage1(armStagesOneRing);
-    move_forward(35.2, 1000);    
+    move_forward(33.8, 1000);    
     intake = 100;
     chassis.turnToHeading(-90, 500, {}, false);
+    pros::delay(200);
 
-    intakeLBT1();
+    intakeLBT();
    
     // Wall stkae    
     move_forward(10, 1000, false, {.maxSpeed=40});    
@@ -664,8 +666,9 @@ void finalHang(){
     // Go hang. 
     hangADI.set_value(1);
     chassis.turnToHeading(-30, 1000, {}, false);
-    move_forward(-50, 2000, false, {});
-    move_forward(-10, 2500, false, {.minSpeed=40});
+    move_forward(-5, 1000, false, {});
+    move_forward(-10, 1000, false, {.minSpeed=40});
+    move_forward(4, 1000, false, {.maxSpeed=100});
 }
 
 
@@ -781,7 +784,9 @@ void opcontrol() {
 
     // pros::delay(1000000);
 
-    catIMG.focus();
+    // catIMG.focus();
+
+    skills();
 
     while (true) {
         // Get Values of the controller
