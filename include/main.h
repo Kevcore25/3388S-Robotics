@@ -295,6 +295,58 @@ extern lemlib::Chassis chassis;
 
 inline bool movingArmMotor = false;
 
+
+inline int sign(int num) {
+  if (num == 0)
+    return 0;
+  return (num >= 0) ? 1 : -1;
+}
+
+inline float lateralInputRemap(float input, float scale) {
+  if (scale != 0) {
+    auto eq1 = [](float x, float a) {
+      return powf(a, std::abs(x) - 127) * (std::abs(x)) * sign(x);
+    };
+
+    return (eq1(input, scale) * 127.0 / (eq1(127, scale)));
+  }
+  return input;
+}
+
+inline float angularInputRemap(float input, float scale) {
+  if (scale != 0) {
+    return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(input) - 127) / 10) *
+                                             (1 - powf(2.718, -(scale / 10)))) *
+           input;
+  }
+  return input;
+}
+
+inline void arcade(int throttle, int angular) {
+  int deadzone = 5;
+
+  throttle = (abs(throttle) <= deadzone) ? 0 : throttle;
+  angular = (abs(angular) <= deadzone) ? 0 : angular;
+
+  throttle = lateralInputRemap(throttle, 1.021);
+
+  angular = angularInputRemap(angular, 7.5) * 0.6;
+
+  if (throttle + angular < 100) {
+    angular /= 0.6;
+  }
+
+  left_motors.move(throttle + angular);
+  right_motors.move(throttle - angular);
+}
+
+
+/**
+ * Moves the arm motor to an angle
+ * Speed is a percentage value. 100 is 127 in voltage
+ * Precision is a delay to save resources. Lower is more accurate and higher is
+ * more efficient
+ */
 inline bool LBmoveToAngle(double angle, int speed = 100, int precision = 5, int timeout = 2000) {
     movingArmMotor = true;
    // If the rotational sensor is connected, then use the rotational sensor to move the ladybrown
@@ -429,6 +481,100 @@ inline void quick_move_forward(float inches, int maxTimeout = 5000, float errorR
     }
 
 }
+inline bool imudc = false;
+inline bool nomoveflex = false;
+inline bool nomovearm = false;
+inline bool onmatch = false;
+inline bool ejecting = false;
+inline int ejectcounter = 0;
+inline int conveyTurnAmt = 0;
+
+inline int armMotorCounter = 0;
+inline int armMotorCounterDouble = 0;
+inline int alliancecounter = 0;
+inline bool moreLB = false;
+
+// Arm motor
+inline void armStagesOneRing() {
+  if (armMotorCounter == 0) {
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    LBmoveToAngle(17.2, 30, 1);
+
+  } else if (armMotorCounter == 1) {
+    // Complicated steps to push it down for the next step
+    intake = -20;
+    LBmoveToAngle(155 + moreLB * 60, 100, 5, 1000);
+    intake = 0;
+    moreLB = false;
+
+  } else if (armMotorCounter == 2) {
+    LBmoveToAngle(-2, 100, 2, 750);
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    // resetLBPos();
+    armMotorCounter = -1;
+  }
+
+  armMotorCounter++;
+  nomovearm = false;
+}
+
+inline void armStagesTwoRing() {
+  if (armMotorCounterDouble == 0) {
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    LBmoveToAngle(24, 30, 2);
+  } else if (armMotorCounterDouble == 1) {
+    // intake = 100;
+    // pros::delay(20);
+    // intake = 0;
+    // pros::delay(10);
+    intake = -30;
+    pros::delay(20);
+    intake = 0;
+    LBmoveToAngle(70, 40, 2);
+  } else if (armMotorCounterDouble == 2) {
+    // Complicated steps to push it down for the next step
+    LBmoveToAngle(160, 100, 5);
+  } else if (armMotorCounterDouble == 3) {
+    LBmoveToAngle(40, 50, 2);
+  } else if (armMotorCounterDouble == 4) {
+    LBmoveToAngle(160, 100, 5);
+  } else if (armMotorCounterDouble == 5) {
+    LBmoveToAngle(0, 100, 2, 200);
+    armMotorCounterDouble = -1;
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    // resetLBPos();
+  }
+
+  armMotorCounterDouble++;
+  nomovearm = false;
+}
+
+inline void allianceStakeCode() {
+  // Wall stake mech code
+  // Should be ran inside a thread because it uses delay commands which can
+  // interrupt the main while true loop
+  move_forward(-5.8, 500, true, {.minSpeed = 30});
+  moreLB = true;
+}
+
+/* Function to "double tap" the intake to make the ring in the ladybrown
+ * actually get "in there" so it can stay there and won't fall off*/
+inline void intakeLB(int amt = 2) {
+  for (int i = 0; i < amt; i++) {
+    intake = 100;
+    pros::delay(150);
+    intake = 0;
+    pros::delay(150);
+  }
+}
+
+inline void lbLater() {
+  pros::delay(750);
+  armStagesOneRing();
+}
+
+inline void intakeLBT() { intakeLB(); }
+
 
 // homemade PID???
 

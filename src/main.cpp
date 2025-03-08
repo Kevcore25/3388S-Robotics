@@ -12,57 +12,32 @@
 #include <ctime>
 #include <string>
 
-// Bond Liu is an opp and a loser
-int auton = 0;
-// Intake is a percentage, that means 100 is 127
 
-std::string autonDisplay[3] = {"left", "right", "awp"};
-std::string teamDisplay[3] = {"Red", "Blue", "None"};
-
+// Declare RoboDash stuff
+// ALSO why is selecting it crashing the brain bruh
 rd::Selector selector({
     {"Red Ring Side", leftRED, "", 0},
     {"Blue Ring Side", rightBLUE, "", 240},
     {"Red Mogo Rush", rightRed, "", 0},
     {"Blue Mogo Rush", leftBLUE, "", 240},
     {"Solo AWP Blue", soloAWPBlue, "", 240},
-    {"Solo AWP Red", soloAWPRed, "", 0},
-
+    {"Solo AWP Red", soloAWPRed, "", 0}
 });
 rd::Console console;
-bool imudc = false;
 
-void test_drive_single(int port) {
-  pros::Motor left_mtr(port);
-  left_mtr.move(127);
-  pros::delay(500);
-  left_mtr.move(0);
-  pros::delay(500);
-}
 
-// void test_drive() {
-//    test_drive_single(l1);
-//    test_drive_single(l2);
-//    test_drive_single(l3);
-//    test_drive_single(r1);
-//    test_drive_single(r2);
-//    test_drive_single(r3);
-// }
-
-bool nomoveflex = false;
-bool nomovearm = false;
-
-bool onmatch = false;
-
-/**
- * Moves the arm motor to an angle
- * Speed is a percentage value. 100 is 127 in voltage
- * Precision is a delay to save resources. Lower is more accurate and higher is
- * more efficient
- */
-
-bool ejecting = false;
-
-int ejectcounter = 0;
+// Set a bunch of values for controller switches
+bool fwSwitch = 0;     
+bool mogoValue = false; 
+bool doinkerValue = false;
+bool intakeValue = false;
+int debugStatCount = 0;
+bool goDetectRing = false;
+bool yesdr = false;
+bool usebrake = false;
+bool manualarm = false;
+int flexwheelstuckamt = 0;
+bool hangbool = false;
 
 void ejectring() {
   if (!onmatch) {
@@ -91,9 +66,7 @@ void ejectring() {
   }
 }
 
-int armMotorCounter = 0;
-int armMotorCounterDouble = 0;
-int alliancecounter = 0;
+
 
 void flexWheelIntakeFunc() {
   int fwamt = 0;
@@ -170,28 +143,13 @@ void initialize() {
   LBtracking.set_data_rate(5);
   LBtracking.reset_position();
 
-  // the default rate is 50. however, if you need to change the rate, you
-  // can do the following.
-  // lemlib::bufferedStdout().setRate(...);
-  // If you use bluetooth or a wired connection, you will want to have a rate of
-  // 10ms
-
-  // for more information on how the formatting for the loggers
-  // works, refer to the fmtlib docs
-
-  //    pros::lcd::print(0, "SELECT THE TEAM");
-  //    pros::lcd::print(1, "SELECT THE AUTON");
-
   ringsort.disable_gesture();
   ringsort.set_integration_time(3);
   ringsort.set_led_pwm(50);
 
-  //    pros::lcd::register_btn1_cb(on_center_button);
-  //    pros::lcd::register_btn0_cb(on_left_button);
+
   pros::Task screenTask([&]() {
-    //    pros::lcd::register_btn2_cb(on_right_button);
     controller.clear();
-    // thread to for brain screen and position logging
     LBtracking.set_reversed(true);
     pros::Task intakeTask(flexWheelIntakeFunc);
 
@@ -205,16 +163,10 @@ void initialize() {
     //   pros::lcd::print(3, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(),
     //                    ringsort.get_hue());
     //   pros::lcd::print(4, "TEAM: %s", teamDisplay[team]);
-      //    pros::lcd::print(7, "Intake Speed: %i  ",
-      //    chain.get_actual_velocity());
-      //    // log position telemetry
 
       lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
       controller.print(0, 0, "%f %f %f", chassis.getPose().x,
                        chassis.getPose().y, chassis.getPose().theta);
-      //    pros::lcd::print(3, "Arm Angle: %.2f   ",
-      //    LBtracking.get_position()/100);
-      console.printf("On %s\n", teamDisplay[team]);
 
       if (!imu.is_installed()) {
         imudc = true;
@@ -230,50 +182,6 @@ void initialize() {
   });
 }
 
-int sign(int num) {
-  if (num == 0)
-    return 0;
-  return (num >= 0) ? 1 : -1;
-}
-
-float lateralInputRemap(float input, float scale) {
-  if (scale != 0) {
-    auto eq1 = [](float x, float a) {
-      return powf(a, std::abs(x) - 127) * (std::abs(x)) * sign(x);
-    };
-
-    return (eq1(input, scale) * 127.0 / (eq1(127, scale)));
-  }
-  return input;
-}
-
-float angularInputRemap(float input, float scale) {
-  if (scale != 0) {
-    return (powf(2.718, -(scale / 10)) + powf(2.718, (fabs(input) - 127) / 10) *
-                                             (1 - powf(2.718, -(scale / 10)))) *
-           input;
-  }
-  return input;
-}
-
-void arcade(int throttle, int angular) {
-  int deadzone = 5;
-
-  throttle = (abs(throttle) <= deadzone) ? 0 : throttle;
-  angular = (abs(angular) <= deadzone) ? 0 : angular;
-
-  throttle = lateralInputRemap(throttle, 1.021);
-
-  angular = angularInputRemap(angular, 7.5) * 0.6;
-
-  if (throttle + angular < 100) {
-    angular /= 0.6;
-  }
-
-  left_motors.move(throttle + angular);
-  right_motors.move(throttle - angular);
-}
-
 void disabled() {}
 
 /**
@@ -286,29 +194,8 @@ void disabled() {}
  * starts.
  */
 void competition_initialize() {
-  // pros::lcd::register_btn1_cb(on_center_button);
-  // pros::lcd::register_btn0_cb(on_left_button);
-  // pros::lcd::register_btn2_cb(on_right_button);
+ 
 }
-
-/**
- * Runs the user autonomous code. This function will be started in its own task
- * with the default priority and stack size whenever the robot is enabled via
- * the Field Management System or the VEX Competition Switch in the autonomous
- * mode. Alternatively, this function may be called in initialize or opcontrol
- * for non-competition testing purposes.
- *
- * If the robot is disabled or communications is lost, the autonomous task
- * will be stopped. Re-enabling the robot will restart the task, not re-start it
- * from where it left off.
- */
-
-// atp(float x, float y, float theta, int timeout = 5000, int delay = 50, float
-// curve = 0.5) {
-//     // Move to Pose custom function to reduce amount of coding
-//     chassis.moveToPose(x,y, theta,timeout, {.horizontalDrift=8, .lead =
-//     curve}); pros::delay(delay);
-// }
 
 void stop() {
   pros::delay(2000);
@@ -316,116 +203,10 @@ void stop() {
   pros::delay(1000000);
 }
 
-/*
-Scores the alliance stake in the start of autonomous.
-This is done by using the ladybrown to score the wall stake.
-*/
-void scoreLB() {}
-
-bool moreLB = false;
-
-// Arm motor
-
-void armStagesOneRing() {
-  if (armMotorCounter == 0) {
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    LBmoveToAngle(17.2, 30, 1);
-
-  } else if (armMotorCounter == 1) {
-    // Complicated steps to push it down for the next step
-    intake = -20;
-    LBmoveToAngle(155 + moreLB * 60, 100, 5, 1000);
-    intake = 0;
-    moreLB = false;
-
-  } else if (armMotorCounter == 2) {
-    LBmoveToAngle(-2, 100, 2, 750);
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    // resetLBPos();
-    armMotorCounter = -1;
-  }
-
-  armMotorCounter++;
-  nomovearm = false;
-}
-
-void armStagesTwoRing() {
-  if (armMotorCounterDouble == 0) {
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    LBmoveToAngle(24, 30, 2);
-  } else if (armMotorCounterDouble == 1) {
-    // intake = 100;
-    // pros::delay(20);
-    // intake = 0;
-    // pros::delay(10);
-    intake = -30;
-    pros::delay(20);
-    intake = 0;
-    LBmoveToAngle(70, 40, 2);
-  } else if (armMotorCounterDouble == 2) {
-    // Complicated steps to push it down for the next step
-    LBmoveToAngle(160, 100, 5);
-  } else if (armMotorCounterDouble == 3) {
-    LBmoveToAngle(40, 50, 2);
-  } else if (armMotorCounterDouble == 4) {
-    LBmoveToAngle(160, 100, 5);
-  } else if (armMotorCounterDouble == 5) {
-    LBmoveToAngle(0, 100, 2, 200);
-    armMotorCounterDouble = -1;
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
-    // resetLBPos();
-  }
-
-  armMotorCounterDouble++;
-  nomovearm = false;
-}
-
-void allianceStakeCode() {
-  // Wall stake mech code
-  // Should be ran inside a thread because it uses delay commands which can
-  // interrupt the main while true loop
-  move_forward(-5.8, 500, true, {.minSpeed = 30});
-  moreLB = true;
-}
-
-/* Function to "double tap" the intake to make the ring in the ladybrown
- * actually get "in there" so it can stay there and won't fall off*/
-void intakeLB(int amt = 2) {
-  for (int i = 0; i < amt; i++) {
-    intake = 100;
-    pros::delay(150);
-    intake = 0;
-    pros::delay(150);
-  }
-}
-
-void lbLater() {
-  pros::delay(750);
-  armStagesOneRing();
-}
-
-void intakeLBT() { intakeLB(); }
 
 void autonomous() {
-  // quick_move_forward(10);
-  // quick_turn_to(50);
-  // quick_turn_to(90);
-  // quick_turn_to(180);
 
-  // quick_move_forward(4);
-
-  // rd::Selector selector({
-  //     {"Red Ring Side", leftRed, "", 0},
-  //     {"Red Mogo Rush", rightRed, "", 12},
-  //     {"Blue Mogo Rush", leftBLUE, "", 240},
-  //     {"Blue Ring Side", rightBLUE, "", 200},
-  //     {"Solo AWP Red", soloAWPRed, "", 350},
-
-  // });
-
-  // Teams
-
-//   rightBLUE();
+    // Set team for ring sort
     try {
         if (selector.get_auton().value().name == "Red Ring Side" ||
         selector.get_auton().value().name == "Red Mogo Rush" ||
@@ -436,24 +217,10 @@ void autonomous() {
         }
     } catch (int e) {}
 
-  selector.run_auton();
+    // Run auton
+    selector.run_auton();
 }
 
-int conveyTurnAmt = 0;
-
-// Set a bunch of values
-bool fwSwitch = 0;      // Flex Wheel intake SWITCH
-bool mogoValue = false; // Mogo Value switch
-bool doinkerValue = false;
-bool intakeValue = false;
-int debugStatCount = 0;
-bool goDetectRing = false;
-bool yesdr = false;
-bool usebrake = false;
-bool manualarm = false;
-int flexwheelstuckamt = 0;
-
-bool hangbool = false;
 void hang() {
   hangbool = !hangbool;
   if (hangbool) {
@@ -482,31 +249,7 @@ void rdsetup() {
 }
 // Driver code
 void opcontrol() {
-  // Before the while true loop, set the arm motor to brake mode instead of
-  // coast to prevent slipping
-  // armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
   onmatch = true; // Disables the ring sort
-
-  // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_COAST);
-  // // Main while true loop
-
-  // for (int i = 0; i < 18; i++) {
-  //     chassis.setPose(0, 0, 0);
-  //     pros::delay(500);
-
-  //     int wanted = (i + 1) * 10;
-
-  //     pros::lcd::print(0, "Wanted: %u", wanted);
-  //     chassis.turnToHeading(wanted, 3000);
-
-  //     pros::delay(500);
-
-  //     pros::delay(5000);
-  // }
-
-  // pros::delay(1000000);
-
-  // pros::Task rdsetupTask(rdsetup);
 
   while (true) {
     // Get Values of the controller
@@ -525,12 +268,8 @@ void opcontrol() {
     int y = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y);
 
     int downArrow = controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
-    int leftArrow =
-        controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT);
-    int upArrow =
-        controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
-    int rightArrow =
-        controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
+    int upArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
+    int rightArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
 
     // Should manual arm be on, arm motors can be moved using the joystick
     if (manualarm && !nomovearm) {
@@ -541,28 +280,30 @@ void opcontrol() {
     if (r1) {
       mogoValue = !mogoValue;
       mogo.set_value(mogoValue);
-      controller.print(2, 0, "Mogo Piston %s          ",
-                       mogoValue ? "ON" : "OFF");
+      controller.print(2, 0, "Mogo Piston %s          ", mogoValue ? "ON" : "OFF");
     }
+
+    // Ladybrown code
     if (l1 && !movingArmMotor) {
       pros::Task armmotortask(armStagesOneRing);
-      controller.print(2, 0, "Arm moving...          ");
     }
+
     // Buttons
     if (a) {
       doinkerValue = !doinkerValue;
       doinker.set_value(doinkerValue);
-      // controller.clear_line(2);
-      controller.print(2, 0, "Doinker %s          ",
-                       doinkerValue ? "ON" : "OFF");
+      controller.print(2, 0, "Doinker %s          ", doinkerValue ? "ON" : "OFF");
     }
 
+    // Change to brake mode
     if (upArrow) {
       usebrake = !usebrake;
       // // controller.clear_line(2);
       controller.print(2, 0, "Brake Mode: %s          ",
                        usebrake ? "Hold" : "None");
     }
+
+    // 
     if (x) {
       manualarm = !manualarm;
       armMotor.tare_position();
@@ -572,19 +313,18 @@ void opcontrol() {
                        doinkerValue ? "ON" : "OFF");
     }
 
+    // Turn on hang
     if (y) {
-      pros::Task armmotorhangtask(&hang);
+      hang();
     }
 
     if (downArrow) {
-      // pros::Task armmotortask2(armStagesTwoRing);
       rollerIntake = 127;
     } else {
       rollerIntake = 0;
     }
 
     if (rightArrow) {
-      // pros::Task armmotortask3(allianceStakeCode);
       allianceStakeCode();
     }
     // If disconnected, set the bot to be hold mode just in case
@@ -596,30 +336,19 @@ void opcontrol() {
       }
 
     } else {
-      chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
+        // this code won us provs VVV
+        chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
     }
 
-    // Function to move the robot
-    // arcade(leftY, rightX);
+    // Drive function (Lemlib)
     chassis.arcade(leftY, rightX, false, 0.4);
 
-    // intake
+    // Activate intake
     intake = r2 * 100 + l2 * -100;
 
     // Delay to save resources. This also makes sure that code runs properly
     // (e.g. 10 ticks = 100 milliseconds)
     pros::delay(10);
 
-    // // Debug
-    // debugStatCount++;
-    // if (debugStatCount >= 100) { // Runs every 1s
-    //     // Print Batery
-    //    controller.print(0, 0, "%i | %i | %i", fwmv, fwmv2,
-    //    flexwheelstuckamt);
-
-    //     // Reset
-    //     debugStatCount = 0;
-
-    // }
   }
 }
