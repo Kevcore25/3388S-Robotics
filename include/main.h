@@ -76,20 +76,20 @@ inline int rollerIntake = 0;
 
 
 
-inline pros::MotorGroup left_motors({-16, -15, -14}, pros::MotorGearset::blue);
-inline pros::MotorGroup right_motors({17, 19, 18}, pros::MotorGearset::blue);
+inline pros::MotorGroup left_motors({-20, -19, -18}, pros::MotorGearset::blue);
+inline pros::MotorGroup right_motors({11, 12, 13}, pros::MotorGearset::blue);
 
 // inline pros::Motor chain(-12, pros::MotorGearset::blue, pros::MotorEncoderUnits::degrees);
 // inline pros::Motor flexWheels(5, pros::MotorGearset::green);
 
-inline pros::Motor chain(-12);
-inline pros::Motor rollers(-4);
+inline pros::Motor chain(17);
+// inline pros::Motor rollers(-4);
 
 
 inline pros::Imu imu(8);
 
 
-inline pros::Motor armMotor(5, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
+inline pros::Motor armMotor(-21, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
 
 
 inline pros::adi::DigitalOut mogo('E');
@@ -100,7 +100,7 @@ inline pros::adi::DigitalOut hangADI('H');
 
 
 inline pros::Rotation horizontalTrackingWheel(-10);
-inline pros::Rotation LBtracking(-2);
+inline pros::Rotation LBtracking(-1);
 
 inline pros::Rotation verticalTrackingWheel(20);
 
@@ -498,7 +498,8 @@ inline bool moreLB = false;
 inline void armStagesOneRing() {
   if (armMotorCounter == 0) {
     armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    LBmoveToAngle(17.2, 30, 1);
+    armMotor.brake();
+    LBmoveToAngle(26, 30, 1);
 
   } else if (armMotorCounter == 1) {
     // Complicated steps to push it down for the next step
@@ -508,8 +509,10 @@ inline void armStagesOneRing() {
     moreLB = false;
 
   } else if (armMotorCounter == 2) {
-    LBmoveToAngle(-2, 100, 2, 750);
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    LBmoveToAngle(0, 100, 2, 750);
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    armMotor.brake();
+
     // resetLBPos();
     armMotorCounter = -1;
   }
@@ -521,7 +524,7 @@ inline void armStagesOneRing() {
 inline void armStagesTwoRing() {
   if (armMotorCounterDouble == 0) {
     armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-    LBmoveToAngle(24, 30, 2);
+    LBmoveToAngle(26, 30, 2);
   } else if (armMotorCounterDouble == 1) {
     // intake = 100;
     // pros::delay(20);
@@ -541,7 +544,8 @@ inline void armStagesTwoRing() {
   } else if (armMotorCounterDouble == 5) {
     LBmoveToAngle(0, 100, 2, 200);
     armMotorCounterDouble = -1;
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    armMotor.brake();
     // resetLBPos();
   }
 

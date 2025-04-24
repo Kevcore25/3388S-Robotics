@@ -95,11 +95,11 @@ void flexWheelIntakeFunc() {
 
         chain.move(intakespd);
 
-        if (rollerIntake == 0) {
-          rollers.move(intakespd);
-        } else {
-          rollers.move(rollerIntake);
-        }
+        // if (rollerIntake == 0) {
+        //   rollers.move(intakespd);
+        // } else {
+        //   rollers.move(rollerIntake);
+        // }
 
         if (intakespd > 100 &&
             (armMotorCounter == 0 && armMotorCounterDouble == 0 &&
@@ -138,10 +138,17 @@ void initialize() {
   chassis.calibrate();     // calibrate sensors
   chassis.setPose(0.0, 0.0, 0.0);
 
+  // armMotor.move(-127);
+  // pros::delay(750);
+
   armMotor.tare_position();
-  LBtracking.reset();
+  armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  // LBtracking.reset();
   LBtracking.set_data_rate(5);
-  LBtracking.reset_position();
+  // LBtracking.reset_position();
+  // pros::delay(100);
+
+  // armMotor.move(0);
 
   ringsort.disable_gesture();
   ringsort.set_integration_time(3);
@@ -150,21 +157,10 @@ void initialize() {
 
   pros::Task screenTask([&]() {
     controller.clear();
-    LBtracking.set_reversed(true);
     pros::Task intakeTask(flexWheelIntakeFunc);
 
     while (true) {
-      // print robot location to the brain screen
-    //   pros::lcd::print(1, "X: %.4f | Y: %.4f | D: %.4f    ",
-    //                    chassis.getPose().x, chassis.getPose().y,
-    //                    chassis.getPose().theta);
-    //   pros::lcd::print(2, "T: %.0fC | %.0fC    ", armMotor.get_temperature(),
-    //                    chain.get_temperature()); // heading
-    //   pros::lcd::print(3, "DISTANCE: %d | HUE: %f", ringsort.get_proximity(),
-    //                    ringsort.get_hue());
-    //   pros::lcd::print(4, "TEAM: %s", teamDisplay[team]);
 
-      lemlib::telemetrySink()->info("Chassis pose: {}", chassis.getPose());
       controller.print(0, 0, "%f %f %f", chassis.getPose().x,
                        chassis.getPose().y, chassis.getPose().theta);
 
@@ -177,24 +173,15 @@ void initialize() {
 
   
       // delay to save resources
-      pros::delay(100);
+      pros::delay(500);
     }
   });
 }
 
 void disabled() {}
 
-/**
- * Runs after initialize(), and before autonomous when connected to the Field
- * Management System or the VEX Competition Switch. This is intended for
- * competition-specific initialization routines, such as an autonomous selector
- * on the LCD.
- *
- * This task will exit when the robot is enabled and autonomous or opcontrol
- * starts.
- */
 void competition_initialize() {
- 
+  
 }
 
 void stop() {
@@ -208,13 +195,13 @@ void autonomous() {
 
     // Set team for ring sort
     try {
-        if (selector.get_auton().value().name == "Red Ring Side" ||
+      if (selector.get_auton().value().name == "Red Ring Side" ||
         selector.get_auton().value().name == "Red Mogo Rush" ||
         selector.get_auton().value().name == "Solo AWP Red") {
-            team = 0;
-        } else {
-            team = 1;
-        }
+          team = 0;
+      } else {
+          team = 1;
+      }
     } catch (int e) {}
 
     // Run auton
@@ -224,10 +211,10 @@ void autonomous() {
 void hang() {
   hangbool = !hangbool;
   if (hangbool) {
-    hangADI.set_value(1);
+    LBmoveToAngle(200);
 
   } else {
-    hangADI.set_value(0);
+    LBmoveToAngle(0);
   }
 }
 
@@ -244,9 +231,8 @@ void rdsetup() {
     console.println("Team is Blue");
   }
 
-  // rd::Image catIMG("/usd/cat.bin", "Cat PNG");
-  // catIMG.focus();
 }
+
 // Driver code
 void opcontrol() {
   onmatch = true; // Disables the ring sort
@@ -306,9 +292,9 @@ void opcontrol() {
     // 
     if (x) {
       manualarm = !manualarm;
-      armMotor.tare_position();
-      LBtracking.reset();
-      LBtracking.reset_position();
+      // armMotor.tare_position();
+      // LBtracking.reset();
+      // LBtracking.reset_position();
       controller.print(2, 0, "Manual Arm %s          ",
                        doinkerValue ? "ON" : "OFF");
     }
@@ -318,15 +304,10 @@ void opcontrol() {
       hang();
     }
 
-    if (downArrow) {
-      rollerIntake = 127;
-    } else {
-      rollerIntake = 0;
-    }
-
     if (rightArrow) {
       allianceStakeCode();
     }
+
     // If disconnected, set the bot to be hold mode just in case
     if (controller.is_connected()) {
       if (usebrake) {

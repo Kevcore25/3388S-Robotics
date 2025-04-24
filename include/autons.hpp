@@ -5,7 +5,12 @@
 
 inline int team = 2;
 
-
+inline void turnTo(float angle, int timeout = -1, bool async = false) {
+    if (timeout == -1) {
+        timeout = std::abs(chassis.getPose().theta - angle) * 4 + 100;
+    }
+    chassis.turnToHeading(angle, timeout, {}, async);
+}
 
 inline void resetLBPos() {
     LBtracking.reset();
@@ -321,40 +326,40 @@ inline void soloAWPBlue() {
 
     // Get alliance stake
     chassis.turnToHeading(45, 400, {}, false);
-    LBmoveToAngle(170, 100, 5, 2000);
+    LBmoveToAngle(170, 100, 5, 1000);
     pros::delay(50);
 
-    // Get Mogo
-    chassis.moveToPoint(-16, -32, 1600, {.forwards=false, .maxSpeed=100}, false);
-    getMogo();    
+    // Get Mogo    
     pros::Task backLB(resetBackLB);
+    chassis.moveToPoint(-16, -32, 1400, {.forwards=false, .maxSpeed=100}, false);
+    getMogo();    
+    
+    // Intake 1 ring
+    turnTo(-90);
+    intake = 100;
+    move_forward(30,1000);
 
-    // Get 2 rings
-    quick_turn_to(-135, 1000);
-    intake=100;
-    chassis.moveToPose(-55, -57, -90, 3000, {.lead=0.7,.minSpeed=60}, false);
-    pros::delay(300);
-    // chassis.moveToPose(-18, -30, -180, 2000, {.forwards=false, .lead=0.7, .minSpeed=70});
-    move_forward(-8, 400);
-    chassis.swingToPoint(-34, -34, lemlib::DriveSide::RIGHT, 1200, {.minSpeed=100});
-    // Get the 1 ring in the middle of the field 
-    pros::Task bru(stopIn);
-    chassis.moveToPose(11, -20, 90, 3000, {.lead=0.75, .minSpeed=100}, false);
-    pros::delay(500);
-    // 
-    // chassis.turnToHeading(0, 500);
+    // Intake 1 ring from corner
+    turnTo(-30);
+    move_forward(50, 2000);
+    move_forward(10, 500);
+
+    // Get the ring in the middle
+    chassis.moveToPoint(10, -4, 2000, {}, false);
+
+    // Get mogo
     mogo.set_value(0);
-    intake = 100;
-    move_forward(-8, 500);    
+    pros::delay(500);
     intake = 0;
-    quick_turn_to(90, 1000);
+    turnTo(-45);
+    move_forward(-32, 750);
+    mogo.set_value(1);
 
-    chassis.moveToPose(9, -44, 0, 2000, {.forwards=false, .lead=0.8, .minSpeed=70}, false);
-    getMogo();
+    // Get ring
+    turnTo(90);
     intake = 100;
-    chassis.turnToHeading(90, 500, {}, false);
-    move_forward(24, 1000);
-    quick_turn_to(-90, 1000);
-    move_forward(40, 1000);
-    chassis.cancelMotion();
+    move_forward(30, 1000);
+    move_forward(-54, 2000);
+
+
 }
