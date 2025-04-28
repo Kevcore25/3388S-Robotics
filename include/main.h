@@ -86,23 +86,22 @@ inline pros::Motor chain(17);
 // inline pros::Motor rollers(-4);
 
 
-inline pros::Imu imu(8);
+inline pros::Imu imu(16);
 
 
 inline pros::Motor armMotor(-21, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
 
 
-inline pros::adi::DigitalOut mogo('E');
-inline pros::adi::DigitalOut doinker('G');
-inline pros::adi::DigitalOut hangADI('H');
+inline pros::adi::DigitalOut mogo('G');
+inline pros::adi::DigitalOut doinker('H');
+inline pros::adi::DigitalOut hangADI('B');
 
 
 
 
-inline pros::Rotation horizontalTrackingWheel(-10);
+inline pros::Rotation horizontalTrackingWheel(-15);
 inline pros::Rotation LBtracking(-1);
 
-inline pros::Rotation verticalTrackingWheel(20);
 
 
 inline pros::Optical ringsort(13);
@@ -146,7 +145,7 @@ inline lemlib::Drivetrain drivetrain(
 );
 
 
-inline lemlib::ControllerSettings lateral_controller(7, // proportional gain (kP)
+inline lemlib::ControllerSettings lateral_controller(6, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               10, // derivative gain (kD)
                                                                       3, // anti windup
@@ -161,7 +160,7 @@ inline lemlib::ControllerSettings lateral_controller(7, // proportional gain (kP
  // angular PID controller
 inline lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
                                              0.05, // integral gain (kI)
-                                             10, // derivative gain (kD)
+                                             11, // derivative gain (kD)
                                              4.420714285714281, // anti windup
                                              1, // small error range, in inches
                                              100, // small error range timeout, in milliseconds
@@ -174,7 +173,7 @@ inline lemlib::ControllerSettings angular_controller(2, // proportional gain (kP
  // lemlib::TrackingWheel vertical_tracking_wheel(&vs, lemlib::Omniwheel::NEW_275, -6);
 
 
- inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -1.6);
+inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -2);
 //  inline lemlib::TrackingWheel verticalTracking(&verticalTrackingWheel, lemlib::Omniwheel::NEW_2, 0.8);
 
  // to not break, disable vertical tracking, set rpm to 400, horizontal tracking wheel to -1.6
@@ -509,7 +508,7 @@ inline void armStagesOneRing() {
     moreLB = false;
 
   } else if (armMotorCounter == 2) {
-    LBmoveToAngle(0, 100, 2, 750);
+    LBmoveToAngle(0, 55, 2, 750);
     armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
     armMotor.brake();
 

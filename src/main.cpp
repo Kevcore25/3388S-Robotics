@@ -7,14 +7,17 @@
 #include "pros/motors.hpp"
 #include "pros/optical.hpp"
 #include "pros/rtos.hpp"
+#include "robodash/views/image.hpp"
 #include "robodash/views/selector.hpp"
 #include <cmath>
 #include <ctime>
+#include <exception>
 #include <string>
 
 
 // Declare RoboDash stuff
 // ALSO why is selecting it crashing the brain bruh
+
 rd::Selector selector({
     {"Red Ring Side", leftRED, "", 0},
     {"Blue Ring Side", rightBLUE, "", 240},
@@ -23,6 +26,7 @@ rd::Selector selector({
     {"Solo AWP Blue", soloAWPBlue, "", 240},
     {"Solo AWP Red", soloAWPRed, "", 0}
 });
+rd::Image teamLogo("/usd/logo.bin", "Team logo");
 rd::Console console;
 
 
@@ -134,15 +138,16 @@ void flexWheelIntakeFunc() {
 }
 
 void initialize() {
-//   pros::lcd::initialize(); // initialize brain screen
+  // pros::lcd::initialize(); // initialize brain screen
   chassis.calibrate();     // calibrate sensors
   chassis.setPose(0.0, 0.0, 0.0);
 
-  // armMotor.move(-127);
-  // pros::delay(750);
+  armMotor.move(-127);
+  pros::delay(500);
 
   armMotor.tare_position();
   armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+  armMotor.brake();
   // LBtracking.reset();
   LBtracking.set_data_rate(5);
   // LBtracking.reset_position();
@@ -153,6 +158,11 @@ void initialize() {
   ringsort.disable_gesture();
   ringsort.set_integration_time(3);
   ringsort.set_led_pwm(50);
+
+  try {
+    selector.focus();
+  } catch (std::exception e) {}
+
 
 
   pros::Task screenTask([&]() {
@@ -180,9 +190,7 @@ void initialize() {
 
 void disabled() {}
 
-void competition_initialize() {
-  
-}
+void competition_initialize() {}
 
 void stop() {
   pros::delay(2000);
@@ -190,10 +198,10 @@ void stop() {
   pros::delay(1000000);
 }
 
-
 void autonomous() {
-
     // Set team for ring sort
+    // chassis.turnToHeading(90, 10000);
+
     try {
       if (selector.get_auton().value().name == "Red Ring Side" ||
         selector.get_auton().value().name == "Red Mogo Rush" ||
@@ -212,7 +220,6 @@ void hang() {
   hangbool = !hangbool;
   if (hangbool) {
     LBmoveToAngle(200);
-
   } else {
     LBmoveToAngle(0);
   }
@@ -220,22 +227,29 @@ void hang() {
 
 /* Setup the ROBODASH setups and team */
 void rdsetup() {
-
-  if (selector.get_auton().value().name == "Red Ring Side" ||
-      selector.get_auton().value().name == "Red Mogo Rush" ||
-      selector.get_auton().value().name == "Solo AWP Red") {
+  if (
+    selector.get_auton().value().name == "Red Ring Side" ||
+    selector.get_auton().value().name == "Red Mogo Rush" ||
+    selector.get_auton().value().name == "Solo AWP Red"
+  ) {
     team = 0;
     console.println("Team is Red");
   } else {
     team = 1;
     console.println("Team is Blue");
   }
-
 }
 
 // Driver code
 void opcontrol() {
   onmatch = true; // Disables the ring sort
+
+  // autonomous();
+  // pros::delay(10000);
+
+  try {
+    teamLogo.focus();
+  } catch (std::exception e) {}
 
   while (true) {
     // Get Values of the controller
