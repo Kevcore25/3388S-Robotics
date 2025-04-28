@@ -1,15 +1,20 @@
 // #pragma once
 #include "lemlib/chassis/chassis.hpp"
 #include "main.h"
+#include "pros/adi.hpp"
 #include "pros/rtos.hpp"
 
 inline int team = 2;
+inline bool elim = false;
 
 inline void turnTo(float angle, int timeout = -1, bool async = false) {
     if (timeout == -1) {
         timeout = std::abs(chassis.getPose().theta - angle) * 4 + 100;
     }
     chassis.turnToHeading(angle, timeout, {}, async);
+}
+inline void setLB0() {
+    LBmoveToAngle(0, 80);
 }
 
 inline void resetLBPos() {
@@ -85,65 +90,150 @@ inline void leftBLUE() {
 
 
 
-
-
-// POV: When realtive move makes your auton code much faster than before for no reason
-// and somehow makes it more consistent wtf??
-inline void saferightBLUE() {
+inline void ringRushBlue(bool elim) {
     team = 1;
-    chassis.setPose(0, 0, 90);
 
-    // Get alliance stake
-    chassis.turnToHeading(45, 500, {}, false);
-    LBmoveToAngle(170, 100, 5, 2000);
+    // Assuming odom works properly, all you need to do for tuning is just to change this value below
+    // Fine tune by changing the code below
+    chassis.setPose(30, 16, 18);
+
+    // Get middle ring
+    chassis.moveToPoint(46, 70, 2000);
+    chassis.waitUntilDone();
+
+    // Doinker activate to get the ring
+    doinker.set_value(1);
     pros::delay(100);
 
-    // Get Mogo
-    chassis.moveToPoint(-15, -32, 2000, {.forwards=false, .maxSpeed=100}, false);
-    pros::delay(200);
-    getMogo();    pros::Task backLB(resetBackLB);
+    // Move backwards
+    chassis.moveToPoint(30, 30, 1000, {.maxSpeed=70});
+    chassis.waitUntilDone();
 
-    // Get 2 rings
-    quick_turn_to(-135, 1000);
-    intake=100;
-    chassis.moveToPose(-54, -57.5, -90, 3000, {.lead=0.7,.minSpeed=50}, false);
-    pros::delay(2000);
+    // Get mogo
+    doinker.set_value(0);
+    chassis.turnToHeading(135, 750);
+    chassis.moveToPoint(24, 48, 1000, {.forwards=false});
 
-    // Get the 1 ring in the middle of the field 
-    chassis.moveToPose(-15, -32, 0, 2000, {.forwards=false, .lead=0.7, .minSpeed=70});
-    chassis.moveToPoint(-38, -27, 2000);
-    pros::delay(500);
-    chassis.moveToPoint(4, -40, 10000, {.maxSpeed=70});
+    // Score all 3 rings
+    intake = 100;
+    chassis.moveToPose(72, 48, 90, 2000, {.lead=0.85}); // MAY BE SWING TURN
+
+    // Go to corner
+    chassis.moveToPoint(70, 2, 2000);
+    chassis.waitUntilDone();
+    move_forward(-12, 500);
+    chassis.moveToPoint(72, 0, 1000);
+
+    // Get the middle ring in the field
+    chassis.turnToHeading(-75, 500);
+    chassis.moveToPose(0, 24, -90, 2000, {.minSpeed=80});
+
+    // Score alliance stake
+    turnTo(-180, -1, true);
+    chassis.moveToPoint(0, 8, 750);
+    chassis.waitUntilDone();
+    LBmoveToAngle(170, 70, 5, 1000);
+    pros::delay(250);
+    pros::Task rstlbfunc(setLB0);
+    
+    if (elim) {
+        // Go to left side of field
+        chassis.moveToPoint(-48, 24, 1000, {.minSpeed=80});
+    } else {
+        // Touch ladder
+        chassis.moveToPoint(0, 50, 1000, {.minSpeed=80});
+    }
 }
 
-inline void rightBLUE() {
+inline void mogoRushBlue() {
     team = 1;
-    chassis.setPose(0, 0, 90);
+
+    // Main set pose. Tune this, then fine tune the other code
+    chassis.setPose(-60, 18, 0);
+
+    // Rush for the mogo
+    chassis.moveToPoint(-50, 70, 2000, {.minSpeed=80});
+    chassis.waitUntilDone();
+
+    // Move it back
+    doinker.set_value(1);
+    pros::delay(150);
+    chassis.moveToPoint(-50, 24, 2000, {.forwards=false});
+    chassis.waitUntilDone();
+
+    // Get mogo
+    doinker.set_value(0);
+    chassis.moveToPoint(-24, 48, 1000, {.forwards=false});
+    chassis.waitUntilDone();
+    mogo.set_value(1);
+    pros::delay(200);
+
+    // Score ring. Due to the rush, ring needs to be tuned
+    intake = 100;
+    chassis.moveToPoint(-48, 48, 1000);
+    chassis.swingToPoint(-50, 30, DriveSide::LEFT, 1000);
+
+    // Get the other mogo
+    mogo.set_value(0);
+    chassis.moveToPoint(-50, 24, 1000, {.forwards=false});
+    chassis.waitUntilDone();
+    mogo.set_value(1);
+
+    // Go to corner
+    chassis.moveToPoint(-70, 2, 2000);
+    chassis.waitUntilDone();
+    move_forward(-12, 500);
+    chassis.moveToPoint(-72, 0, 1000);
+
+    // Get the middle ring in the field
+    chassis.moveToPose(0, 24, -90, 2000);
+    if (!elim) {
+        // Drop mogo
+        chassis.turnToHeading(45, 750);
+        chassis.waitUntilDone();
+        mogo.set_value(0);
+
+        // Touch ladder
+        chassis.moveToPoint(0, 50, 2000, {.minSpeed=70});
+    }
+}
+
+
+inline void slowRightBlue() {
+    team = 1;
+
+    // Tune this first
+    chassis.setPose(12, 12, -90);
 
     // Get alliance stake
-    chassis.turnToHeading(45, 500, {}, false);
-    LBmoveToAngle(170, 100, 5, 2000);
+    chassis.turnToHeading(-138, 500);
+    chassis.waitUntilDone();
+    LBmoveToAngle(170, 70, 5, 2000);
+    pros::delay(100);
+    pros::Task rstlbfunc(setLB0);
+
+    // Get mogo
+    chassis.moveToPose(24, 48, -180, 2000, {.forwards=false, .lead=0.7});
+    chassis.waitUntilDone();
+    mogo.set_value(1);
     pros::delay(100);
 
-    // Get Mogo
-    chassis.moveToPoint(-16, -32, 1800, {.forwards=false, .maxSpeed=100}, false);
-    getMogo();    
-    pros::Task backLB(resetBackLB);
+    // Get 2 rings in the middle. WARNING: RISKY
+    chassis.turnToHeading(45, 750);
+    chassis.moveToPose(72, 68, 90, 2500);
+    chassis.waitUntilDone();
+    pros::delay(500);
 
-    // Get 2 rings
-    quick_turn_to(-135, 1000);
-    intake=100;
-    chassis.moveToPose(-54, -56, -90, 4000, {.lead=0.7,.minSpeed=50}, false);
-    pros::delay(1000);
-    // chassis.moveToPose(-18, -30, -180, 2000, {.forwards=false, .lead=0.7, .minSpeed=70});
-    move_forward(-9, 500);
-    chassis.swingToPoint(-34, -34, lemlib::DriveSide::RIGHT, 1200, {.minSpeed=100});
-    // Get the 1 ring in the middle of the field 
-    chassis.moveToPose(6, -20, 90, 3000, {.lead=0.75}, false);
-    pros::delay(1000);
-    intake = 10;
-    chassis.moveToPoint(2, -46, 2000, {.maxSpeed=90});
-    intake = 0;
+    // Get middle ring
+    chassis.swingToPoint(48, 48, DriveSide::RIGHT, 1500);
+
+    if (elim) {
+        // Go to left side of field
+        chassis.moveToPoint(-48, 24, 2000, {.minSpeed=80});
+    } else {
+        // Touch ladder
+        chassis.moveToPoint(0, 50, 2000, {.minSpeed=80});
+    }
 }
 
 inline void leftRED() {
@@ -174,64 +264,6 @@ inline void leftRED() {
     chassis.moveToPose(-12, -18, -90, 3000, {.maxSpeed=80});
     chassis.moveToPoint(0, -46, 3000, {.maxSpeed=70});
 }
-
-// inline void leftRed() {
-//     chassis.moveToPoint(0, 2.6, 200);
-    
-//     chassis.turnToHeading(45, 400);
-
-//     // Raise LB
-//     LBmoveToAngle(110, 50, 2, 700);
-//     LBmoveToAngle(210, 100, 2, 300);
-
-//     chassis.moveToPoint(-16, 0, 800, {.forwards=false}, false);
-//     LBmoveToAngle(-100, 100, 5, 500);
-
-//     chassis.turnToHeading(0, 500, {}, false);
-
-//     doinker.set_value(1);
-//     pros::delay(100);
-//     move_forward(-10, 700, false);
-//     pros::delay(100);
-
-//     doinker.set_value(0);
-//     resetLB();
-
-
-//     chassis.moveToPoint(-35.6, -10.3, 1000, {.forwards=false}, false);
-//     pros::delay(250);
-//     getMogo();
-
-//     chassis.turnToHeading(180, 700, {}, false);
-//     intake=100;
-//     move_forward(20, 700, false);
-
-//     chassis.turnToHeading(-80, 700, {}, false);
-
-//     move_forward(15, 700, false);
-
-//     pros::delay(300);
-
-//     move_forward(-10, 700, false);
-
-//     chassis.turnToHeading(-110, 700, {}, false);
-
-//     move_forward(10.5, 700, false);
-
-//     pros::delay(300);
-
-//     move_forward(-35, 1500, false);
-
-//     chassis.turnToHeading(0, 700, {}, false);
-
-//     move_forward(23, 700, false);
-    
-//     pros::delay(100);
-
-//     chassis.turnToHeading(-70, 700, {}, false);
-
-//     move_forward(40, 2000, false, {.maxSpeed=70});
-// }
 
 
 inline void rightRed(){
