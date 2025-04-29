@@ -203,7 +203,7 @@ inline void slowRightBlue() {
     team = 1;
 
     // Tune this first
-    chassis.setPose(12, 12, -90);
+    chassis.setPose(3, 6, -90);
 
     // Get alliance stake
     chassis.turnToHeading(-138, 500);
@@ -226,6 +226,16 @@ inline void slowRightBlue() {
 
     // Get middle ring
     chassis.swingToPoint(48, 48, DriveSide::RIGHT, 1500);
+
+
+    // Go to corner
+    chassis.moveToPoint(-70, 2, 2000);
+    chassis.waitUntilDone();
+    move_forward(-12, 500);
+    chassis.moveToPoint(-72, 0, 1000);
+
+    // Get the middle ring in the field
+    chassis.moveToPose(0, 24, -90, 2000);
 
     if (elim) {
         // Go to left side of field

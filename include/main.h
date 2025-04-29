@@ -99,7 +99,7 @@ inline pros::adi::DigitalOut hangADI('B');
 
 
 
-inline pros::Rotation horizontalTrackingWheel(-15);
+inline pros::Rotation horizontalTrackingWheel(15);
 inline pros::Rotation LBtracking(-1);
 
 
@@ -138,37 +138,36 @@ inline Line 3: Log
 inline lemlib::Drivetrain drivetrain(
    &left_motors,
    &right_motors,
-   11.8,
+   11.25,
    lemlib::Omniwheel::NEW_275,
-   400,
-   8
+   425,
+   2
 );
 
 
-inline lemlib::ControllerSettings lateral_controller(6, // proportional gain (kP)
-                                              0, // integral gain (kI)
-                                              10, // derivative gain (kD)
-                                                                      3, // anti windup
-                                              1, // small error range, in inches
-                                              100, // small error range timeout, in milliseconds
-                                              3, // large error range, in inches
-                                              500, // large error range timeout, in milliseconds
-                                              20 // maximum acceleration (slew)
+inline lemlib::ControllerSettings lateral_controller(
+  8.2, // proportional gain (kP)
+  0, // integral gain (kI)
+  4.6, // derivative gain (kD)
+  0, // anti windup
+  0, // small error range, in inches
+  0, // small error range timeout, in milliseconds
+  0, // large error range, in inches
+  0, // large error range timeout, in milliseconds
+  0 // maximum acceleration (slew)
 );
 
-
- // angular PID controller
-inline lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
-                                             0.05, // integral gain (kI)
-                                             11, // derivative gain (kD)
-                                             4.420714285714281, // anti windup
-                                             1, // small error range, in inches
-                                             100, // small error range timeout, in milliseconds
-                                             3, // large error range, in inches
-                                             500, // large error range timeout, in milliseconds
-                                             0 // maximum acceleration (slew)
+inline lemlib::ControllerSettings angular_controller(
+  2, // proportional gain (kP)
+  0, // integral gain (kI)
+  10, // derivative gain (kD)
+  0, // anti windup
+  0, // small error range, in inches
+  0, // small error range timeout, in milliseconds
+  0, // large error range, in inches
+  0, // large error range timeout, in milliseconds
+  0 // maximum celeration (slew)
 );
-
 
  // lemlib::TrackingWheel vertical_tracking_wheel(&vs, lemlib::Omniwheel::NEW_275, -6);
 
@@ -178,11 +177,12 @@ inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib
 
  // to not break, disable vertical tracking, set rpm to 400, horizontal tracking wheel to -1.6
  
- inline lemlib::OdomSensors sensors(nullptr, // vertical tracking wheel 1, set to null
-                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
-                             &horizontalTracking, // horizontal tracking wheel 1
-                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
-                             &imu//&imu // inertial sensor
+ inline lemlib::OdomSensors sensors(
+  nullptr, // vertical tracking wheel 1, set to null
+  nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
+  &horizontalTracking, // horizontal tracking wheel 1
+  nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
+  &imu//&imu // inertial sensor
  );
  
 
@@ -498,18 +498,18 @@ inline void armStagesOneRing() {
   if (armMotorCounter == 0) {
     armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     armMotor.brake();
-    LBmoveToAngle(26, 30, 1);
+    LBmoveToAngle(26.25, 30, 1);
 
   } else if (armMotorCounter == 1) {
     // Complicated steps to push it down for the next step
     intake = -20;
-    LBmoveToAngle(155 + moreLB * 60, 100, 5, 1000);
+    LBmoveToAngle(155 + moreLB * 60, 100, 5, 1200);
     intake = 0;
     moreLB = false;
 
   } else if (armMotorCounter == 2) {
-    LBmoveToAngle(0, 55, 2, 750);
-    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    LBmoveToAngle(0, 90, 2, 1200);
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
     armMotor.brake();
 
     // resetLBPos();

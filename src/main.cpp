@@ -3,6 +3,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/chassis.hpp"
 #include "pros/misc.hpp"
+#include "pros/motor_group.hpp"
 #include "pros/motors.h"
 #include "pros/motors.hpp"
 #include "pros/optical.hpp"
@@ -12,19 +13,19 @@
 #include <cmath>
 #include <ctime>
 #include <exception>
+#include <ios>
 #include <string>
+#include <fstream>
 
 
 // Declare RoboDash stuff
 // ALSO why is selecting it crashing the brain bruh
 
 rd::Selector selector({
-    {"Red Ring Side", leftRED, "", 0},
-    {"Blue Ring Side", rightBLUE, "", 240},
-    {"Red Mogo Rush", rightRed, "", 0},
-    {"Blue Mogo Rush", leftBLUE, "", 240},
+    {"Blue Ring Side", slowRightBlue, "", 240},
+    {"Blue Ring Rush (Dont work)", mogoRushBlue, "", 240},
+    {"Blue Mogo Rush", mogoRushBlue, "", 240},
     {"Solo AWP Blue", soloAWPBlue, "", 240},
-    {"Solo AWP Red", soloAWPRed, "", 0}
 });
 rd::Image teamLogo("/usd/logo.bin", "Team logo");
 rd::Console console;
@@ -70,6 +71,43 @@ void ejectring() {
   }
 }
 
+
+
+void testpid() {
+  pros::MotorGroup dt = pros::MotorGroup({-20, -19, -18, 11, 12, 13});
+  std::ofstream outfile;
+
+  outfile.open("/usd/test1.txt", std::ios_base::app); // append instead of overwrite
+  for (int i = 0; i < 12000; i += 1000) {
+    dt.move_voltage(i);
+    pros::delay(1000);
+    controller.print(1, 0, "A: %.6f     ", dt.get_actual_velocity() / 1000);
+    controller.print(1, 0, "T: %.6f     ", dt.get_target_velocity() / 1000);
+    outfile << std::format("(%.6f,%.6f),", dt.get_target_velocity() / 1000, dt.get_actual_velocity() / 1000);
+    dt.move_voltage(0);
+    pros::delay(500);
+
+    if (i == 5) {
+      pros::delay(10000);
+    }
+  }
+  outfile.close();
+}
+
+void testPID2() {
+  pros::MotorGroup dt = pros::MotorGroup({-20, -19, -18, 11, 12, 13});
+  std::ofstream outfile;
+
+  outfile.open("/usd/test2.txt", std::ios_base::app); // append instead of overwrite
+  double i = 0;
+  dt.move_voltage(10000);
+  for (int k = 0; k < 100; k++) {
+    outfile << std::format("(%.3f,%.6f),", i, dt.get_actual_velocity() / 1000);
+    i += 0.01;
+    pros::delay(10);
+  }
+  outfile.close();
+}
 
 
 void flexWheelIntakeFunc() {
@@ -202,6 +240,8 @@ void autonomous() {
     // Set team for ring sort
     // chassis.turnToHeading(90, 10000);
 
+    // chassis.turnToHeading(180, 10000);
+
     try {
       if (selector.get_auton().value().name == "Red Ring Side" ||
         selector.get_auton().value().name == "Red Mogo Rush" ||
@@ -214,6 +254,7 @@ void autonomous() {
 
     // Run auton
     selector.run_auton();
+
 }
 
 void hang() {
@@ -243,6 +284,9 @@ void rdsetup() {
 // Driver code
 void opcontrol() {
   onmatch = true; // Disables the ring sort
+
+  // testpid();
+  // pros::delay(2000);
 
   // autonomous();
   // pros::delay(10000);
