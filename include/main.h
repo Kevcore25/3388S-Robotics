@@ -99,7 +99,7 @@ inline pros::adi::DigitalOut hangADI('B');
 
 
 
-inline pros::Rotation horizontalTrackingWheel(15);
+inline pros::Rotation horizontalTrackingWheel(-15);
 inline pros::Rotation LBtracking(-1);
 
 
@@ -162,17 +162,17 @@ inline lemlib::ControllerSettings angular_controller(
   0, // integral gain (kI)
   10, // derivative gain (kD)
   0, // anti windup
-  0, // small error range, in inches
-  0, // small error range timeout, in milliseconds
-  0, // large error range, in inches
-  0, // large error range timeout, in milliseconds
+  1, // small error range, in inches
+  100, // small error range timeout, in milliseconds
+  3, // large error range, in inches
+  500, // large error range timeout, in milliseconds
   0 // maximum celeration (slew)
 );
 
  // lemlib::TrackingWheel vertical_tracking_wheel(&vs, lemlib::Omniwheel::NEW_275, -6);
 
 
-inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -2);
+inline lemlib::TrackingWheel horizontalTracking(&horizontalTrackingWheel, lemlib::Omniwheel::NEW_2, -1.0);
 //  inline lemlib::TrackingWheel verticalTracking(&verticalTrackingWheel, lemlib::Omniwheel::NEW_2, 0.8);
 
  // to not break, disable vertical tracking, set rpm to 400, horizontal tracking wheel to -1.6

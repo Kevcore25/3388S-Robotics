@@ -90,21 +90,21 @@ inline void leftBLUE() {
 
 
 
-inline void ringRushBlue(bool elim) {
+inline void ringRushBlue() {
     team = 1;
 
     // Assuming odom works properly, all you need to do for tuning is just to change this value below
     // Fine tune by changing the code below
     chassis.setPose(30, 16, 18);
+    
+    // Doinker activate to get the ring
+    doinker.set_value(1);
 
     // Get middle ring
     chassis.moveToPoint(46, 70, 2000);
     chassis.waitUntilDone();
 
-    // Doinker activate to get the ring
-    doinker.set_value(1);
-    pros::delay(100);
-
+  
     // Move backwards
     chassis.moveToPoint(30, 30, 1000, {.maxSpeed=70});
     chassis.waitUntilDone();
@@ -203,7 +203,7 @@ inline void slowRightBlue() {
     team = 1;
 
     // Tune this first
-    chassis.setPose(3, 6, -90);
+    chassis.setPose(0, 4, -90);
 
     // Get alliance stake
     chassis.turnToHeading(-138, 500);
@@ -220,7 +220,7 @@ inline void slowRightBlue() {
 
     // Get 2 rings in the middle. WARNING: RISKY
     chassis.turnToHeading(45, 750);
-    chassis.moveToPose(72, 68, 90, 2500);
+    chassis.moveToPose(72, 64, 90, 2500);
     chassis.waitUntilDone();
     pros::delay(500);
 

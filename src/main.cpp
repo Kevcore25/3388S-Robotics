@@ -21,11 +21,14 @@
 // Declare RoboDash stuff
 // ALSO why is selecting it crashing the brain bruh
 
+void noth() {}
+
 rd::Selector selector({
     {"Blue Ring Side", slowRightBlue, "", 240},
-    {"Blue Ring Rush (Dont work)", mogoRushBlue, "", 240},
+    {"Blue Ring Rush", ringRushBlue, "", 240},
     {"Blue Mogo Rush", mogoRushBlue, "", 240},
     {"Solo AWP Blue", soloAWPBlue, "", 240},
+    {"Run Autonomous", noth, "", 120},
 });
 rd::Image teamLogo("/usd/logo.bin", "Team logo");
 rd::Console console;
@@ -224,6 +227,17 @@ void initialize() {
       pros::delay(500);
     }
   });
+  std::cout << "Initialized";
+  // Yes.
+  rd::Selector::routine_t lastr;
+  selector.on_select([&lastr](std::optional<rd::Selector::routine_t> routine) {
+		if (routine.value().name == "Run Autonomous") {
+			std::cout << "Running autonomous" << std::endl;
+      lastr.action();
+		} else {
+      lastr = *routine;
+    }
+	});
 }
 
 void disabled() {}
