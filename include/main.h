@@ -104,7 +104,7 @@ inline pros::Rotation LBtracking(-1);
 
 
 
-inline pros::Optical ringsort(13);
+inline pros::Optical ringsort(10);
 
 
 
@@ -150,10 +150,10 @@ inline lemlib::ControllerSettings lateral_controller(
   0, // integral gain (kI)
   4.6, // derivative gain (kD)
   0, // anti windup
-  0, // small error range, in inches
-  0, // small error range timeout, in milliseconds
-  0, // large error range, in inches
-  0, // large error range timeout, in milliseconds
+  0.25, // small error range, in inches
+  50, // small error range timeout, in milliseconds
+  0.5, // large error range, in inches
+  200, // large error range timeout, in milliseconds
   0 // maximum acceleration (slew)
 );
 

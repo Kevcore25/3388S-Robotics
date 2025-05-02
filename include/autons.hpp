@@ -4,7 +4,7 @@
 #include "pros/adi.hpp"
 #include "pros/rtos.hpp"
 
-inline int team = 2;
+inline int team = 1;
 inline bool elim = false;
 
 inline void turnTo(float angle, int timeout = -1, bool async = false) {
@@ -88,60 +88,99 @@ inline void leftBLUE() {
     // doinker.set_value(0);
 }
 
+inline void putDownLB() {
 
+  pros::Task putdownlb([&]() {
+    armMotor.move(-127);
+    pros::delay(500);
+
+    armMotor.tare_position();
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    armMotor.brake();
+  });
+  
+}
+
+inline void stop(){
+    pros::delay(1000);
+    intake = 0;
+    pros::delay(10000000);
+}
+
+inline void stopWhenRing() {
+    while (ringsort.get_proximity() >= 210 ) {
+        pros::delay(1);
+    }
+    intake = 5;
+}
 
 inline void ringRushBlue() {
     team = 1;
+    
+    putDownLB();
 
     // Assuming odom works properly, all you need to do for tuning is just to change this value below
     // Fine tune by changing the code below
-    chassis.setPose(30, 16, 18);
+    chassis.setPose(32, 16, 21);
     
     // Doinker activate to get the ring
     doinker.set_value(1);
 
     // Get middle ring
-    chassis.moveToPoint(46, 70, 2000);
+    intake = 100;
+    chassis.moveToPoint(47.5, 58, 2000);
     chassis.waitUntilDone();
+    intake = 75;
+    pros::delay(500);
+    pros::Task bru(stopWhenRing);
 
-  
     // Move backwards
-    chassis.moveToPoint(30, 30, 1000, {.maxSpeed=70});
+    chassis.moveToPoint(42, 30, 1000, {.forwards=false, .maxSpeed=75});
+    // move_forward(-25, 1000, true, {.maxSpeed=70});
     chassis.waitUntilDone();
 
+    intake = 0;
     // Get mogo
     doinker.set_value(0);
-    chassis.turnToHeading(135, 750);
-    chassis.moveToPoint(24, 48, 1000, {.forwards=false});
+    pros::delay(200);
+    chassis.turnToHeading(140, 650);
+    chassis.moveToPoint(24, 55, 1000, {.forwards=false, .maxSpeed=60});
+    chassis.waitUntilDone();    
+    mogo.set_value(1);
+    pros::delay(500);
 
     // Score all 3 rings
     intake = 100;
-    chassis.moveToPose(72, 48, 90, 2000, {.lead=0.85}); // MAY BE SWING TURN
+    chassis.moveToPose(52, 55, 80, 2500, {.lead=0.5, .minSpeed=80});
+
+    // pros::delay(100000);
 
     // Go to corner
-    chassis.moveToPoint(70, 2, 2000);
+    chassis.moveToPoint(70, 2, 2000, {.maxSpeed=70});
     chassis.waitUntilDone();
     move_forward(-12, 500);
-    chassis.moveToPoint(72, 0, 1000);
+    chassis.moveToPoint(72, 0, 1000, {.maxSpeed=70});
 
     // Get the middle ring in the field
     chassis.turnToHeading(-75, 500);
-    chassis.moveToPose(0, 24, -90, 2000, {.minSpeed=80});
+    chassis.moveToPose(16, 12, -90, 2000, {.minSpeed=80});
+    armStagesOneRing();
+    armMotorCounter = 0;
 
     // Score alliance stake
-    turnTo(-180, -1, true);
-    chassis.moveToPoint(0, 8, 750);
-    chassis.waitUntilDone();
-    LBmoveToAngle(170, 70, 5, 1000);
+    turnTo(-180, -1);
+    move_forward(8, 750);
+
+    LBmoveToAngle(170, 60, 5, 1500);
     pros::delay(250);
+    intake = 0;
     pros::Task rstlbfunc(setLB0);
-    
     if (elim) {
         // Go to left side of field
         chassis.moveToPoint(-48, 24, 1000, {.minSpeed=80});
     } else {
         // Touch ladder
-        chassis.moveToPoint(0, 50, 1000, {.minSpeed=80});
+        chassis.moveToPoint(14, 50,1000, {.minSpeed=80});
     }
 }
 

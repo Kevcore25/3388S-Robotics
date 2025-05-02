@@ -60,14 +60,14 @@ void ejectring() {
       pros::delay(1); // Add a short delay. 2 is the minimum polling rate of the
                       // sensor so this should be 3
     }
-    pros::delay(1);
+    // pros::delay(200);
     // pros::delay(50);
     // pros::delay(150);
     // pros::delay(50);
 
     chain.move(-15);
 
-    pros::delay(200);
+    pros::delay(100);
     // pros::lcd::print(6, "nope");
 
     ejecting = false;
@@ -116,20 +116,21 @@ void testPID2() {
 void flexWheelIntakeFunc() {
   int fwamt = 0;
   int yesfw = 0;
+  int amtofdetect = 0;
   while (true) {
     // Spin the intake if on
     int intakespd = intake * 1.27;
 
     int prox = ringsort.get_proximity();
     int hue = ringsort.get_hue();
-
     if (!ejecting) {
 
       if (prox >= 210 && ejectcounter < 3 &&
           ((team == 0 && hue >= 200 && hue <= 250) ||
            (team == 1 && hue >= 3 && hue <= 20))) {
         // console.println("Detect ring");
-        pros::lcd::print(6, "detect ring   ");
+        amtofdetect++;
+        pros::lcd::print(6, "Detected ring x%d", amtofdetect);
 
         pros::Task ertask(ejectring);
         // ejectring();
@@ -179,16 +180,21 @@ void flexWheelIntakeFunc() {
 }
 
 void initialize() {
+
+
+  pros::Task putdownlb([&]() {
+    armMotor.move(-127);
+    pros::delay(500);
+
+    armMotor.tare_position();
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    armMotor.brake();
+  });
+  
   // pros::lcd::initialize(); // initialize brain screen
   chassis.calibrate();     // calibrate sensors
   chassis.setPose(0.0, 0.0, 0.0);
-
-  armMotor.move(-127);
-  pros::delay(500);
-
-  armMotor.tare_position();
-  armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
-  armMotor.brake();
+  
   // LBtracking.reset();
   LBtracking.set_data_rate(5);
   // LBtracking.reset_position();
@@ -212,7 +218,7 @@ void initialize() {
 
     while (true) {
 
-      controller.print(0, 0, "%f %f %f", chassis.getPose().x,
+      controller.print(0, 0, "%.2f %.2f %.2f", chassis.getPose().x,
                        chassis.getPose().y, chassis.getPose().theta);
 
       if (!imu.is_installed()) {
@@ -227,47 +233,57 @@ void initialize() {
       pros::delay(500);
     }
   });
-  std::cout << "Initialized";
-  // Yes.
-  rd::Selector::routine_t lastr;
-  selector.on_select([&lastr](std::optional<rd::Selector::routine_t> routine) {
-		if (routine.value().name == "Run Autonomous") {
-			std::cout << "Running autonomous" << std::endl;
-      lastr.action();
-		} else {
-      lastr = *routine;
-    }
-	});
+  // std::cout << "Initialized";
+  // // Yes.
+  // rd::Selector::routine_t lastr;
+  // selector.on_select([&lastr](std::optional<rd::Selector::routine_t> routine) {
+	// 	if (routine.value().name == "Run Autonomous") {
+	// 		std::cout << "Running autonomous" << std::endl;
+  //     lastr.action();
+	// 	} else {
+  //     lastr = *routine;
+  //   }
+	// });
 }
 
-void disabled() {}
+void disabled() {
 
-void competition_initialize() {}
+  
+}
 
-void stop() {
-  pros::delay(2000);
-  chain.move(0);
-  pros::delay(1000000);
+void competition_initialize() {
+
+  pros::Task putdownlb([&]() {
+    armMotor.move(-127);
+    pros::delay(500);
+
+    armMotor.tare_position();
+    armMotor.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+    armMotor.brake();
+  });
+  
 }
 
 void autonomous() {
+  onmatch = false;
     // Set team for ring sort
     // chassis.turnToHeading(90, 10000);
 
     // chassis.turnToHeading(180, 10000);
 
-    try {
-      if (selector.get_auton().value().name == "Red Ring Side" ||
-        selector.get_auton().value().name == "Red Mogo Rush" ||
-        selector.get_auton().value().name == "Solo AWP Red") {
-          team = 0;
-      } else {
-          team = 1;
-      }
-    } catch (int e) {}
+    // try {
+    //   if (selector.get_auton().value().name == "Red Ring Side" ||
+    //     selector.get_auton().value().name == "Red Mogo Rush" ||
+    //     selector.get_auton().value().name == "Solo AWP Red") {
+    //       team = 0;
+    //   } else {
+    //       team = 1;
+    //   }
+    // } catch (int e) {}
 
     // Run auton
-    selector.run_auton();
+    ringRushBlue();
+    // selector.run_auton();
 
 }
 
@@ -297,7 +313,7 @@ void rdsetup() {
 
 // Driver code
 void opcontrol() {
-  onmatch = true; // Disables the ring sort
+    // onmatch = true; // Disables the ring sort
 
   // testpid();
   // pros::delay(2000);
@@ -328,10 +344,21 @@ void opcontrol() {
     int downArrow = controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN);
     int upArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP);
     int rightArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT);
+    int leftArrow = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_LEFT);
 
     // Should manual arm be on, arm motors can be moved using the joystick
     if (manualarm && !nomovearm) {
       armMotor.move(-rightY);
+    }
+
+    if (leftArrow) {
+      onmatch = !onmatch;
+      if (onmatch) {
+        ringsort.set_led_pwm(0);
+      } else {
+        ringsort.set_led_pwm(50);
+      }
+      controller.print(2, 0, "RING SORT %s          ", onmatch ? "OFF" : "ON");
     }
 
     // Mogo mech code
