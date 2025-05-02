@@ -2,6 +2,7 @@
 #include "lemlib/chassis/chassis.hpp"
 #include "main.h"
 #include "pros/adi.hpp"
+#include "pros/device.hpp"
 #include "pros/rtos.hpp"
 
 inline int team = 1;
@@ -151,7 +152,7 @@ inline void ringRushBlue() {
 
     // Score all 3 rings
     intake = 100;
-    chassis.moveToPose(52, 55, 80, 2500, {.lead=0.5, .minSpeed=80});
+    chassis.moveToPose(52, 55, 80, 2700, {.lead=0.5, .minSpeed=80});
 
     // pros::delay(100000);
 
@@ -165,14 +166,15 @@ inline void ringRushBlue() {
     chassis.turnToHeading(-75, 500);
     chassis.moveToPose(16, 12, -90, 2000, {.minSpeed=80});
     armStagesOneRing();
-    armMotorCounter = 0;
 
     // Score alliance stake
     turnTo(-180, -1);
     move_forward(8, 750);
 
     LBmoveToAngle(170, 60, 5, 1500);
-    pros::delay(250);
+    pros::delay(250);        
+    armMotorCounter = 0;
+
     intake = 0;
     pros::Task rstlbfunc(setLB0);
     if (elim) {
@@ -188,28 +190,28 @@ inline void mogoRushBlue() {
     team = 1;
 
     // Main set pose. Tune this, then fine tune the other code
-    chassis.setPose(-60, 18, 0);
+    chassis.setPose(-54, 18, 0);
+    doinker.set_value(1);
 
     // Rush for the mogo
-    chassis.moveToPoint(-50, 70, 2000, {.minSpeed=80});
+    chassis.moveToPoint(-50, 64, 2000, {.minSpeed=80});
     chassis.waitUntilDone();
 
     // Move it back
-    doinker.set_value(1);
     pros::delay(150);
     chassis.moveToPoint(-50, 24, 2000, {.forwards=false});
     chassis.waitUntilDone();
 
     // Get mogo
     doinker.set_value(0);
-    chassis.moveToPoint(-24, 48, 1000, {.forwards=false});
+    chassis.moveToPoint(-24, 48, 1500, {.forwards=false});
     chassis.waitUntilDone();
     mogo.set_value(1);
     pros::delay(200);
 
     // Score ring. Due to the rush, ring needs to be tuned
     intake = 100;
-    chassis.moveToPoint(-48, 48, 1000);
+    chassis.moveToPoint(-48, 48, 2000);
     chassis.swingToPoint(-50, 30, DriveSide::LEFT, 1000);
 
     // Get the other mogo

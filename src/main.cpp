@@ -265,7 +265,7 @@ void competition_initialize() {
 }
 
 void autonomous() {
-  onmatch = false;
+    onmatch = false;
     // Set team for ring sort
     // chassis.turnToHeading(90, 10000);
 
@@ -282,6 +282,7 @@ void autonomous() {
     // } catch (int e) {}
 
     // Run auton
+    // mogoRushBlue();
     ringRushBlue();
     // selector.run_auton();
 

@@ -82,11 +82,11 @@ inline pros::MotorGroup right_motors({11, 12, 13}, pros::MotorGearset::blue);
 // inline pros::Motor chain(-12, pros::MotorGearset::blue, pros::MotorEncoderUnits::degrees);
 // inline pros::Motor flexWheels(5, pros::MotorGearset::green);
 
-inline pros::Motor chain(17);
+inline pros::Motor chain(16);
 // inline pros::Motor rollers(-4);
 
 
-inline pros::Imu imu(16);
+inline pros::Imu imu(17);
 
 
 inline pros::Motor armMotor(-21, pros::MotorGearset::rpm_600, pros::MotorEncoderUnits::degrees);
