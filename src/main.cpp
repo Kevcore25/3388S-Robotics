@@ -55,19 +55,23 @@ void ejectring() {
 
     // Keep detecting until the hole is passed
     int bruh = 0;
-    while (ringsort.get_proximity() >= 210 && bruh < 500) {
+    while (ringsort.get_proximity() >= 210 && bruh < 300) {
       bruh++;
       pros::delay(1); // Add a short delay. 2 is the minimum polling rate of the
-                      // sensor so this should be 3
     }
-    // pros::delay(200);
-    // pros::delay(50);
-    // pros::delay(150);
-    // pros::delay(50);
+   
+    // Wait until a certain amount of pos before ejecting and set a timeout of a certain amount of MS in case of the chain failing
+    double currentChain = chain.get_position();
+    int i = 0;
+    //          amt of rotations until eject    v           v   timeout in MS
+    while (chain.get_position()-currentChain < 63 && i < 100) {
+      i++;
+      pros::delay(1);
+    }
 
     chain.move(-15);
 
-    pros::delay(100);
+    pros::delay(200);
     // pros::lcd::print(6, "nope");
 
     ejecting = false;
@@ -125,7 +129,7 @@ void flexWheelIntakeFunc() {
     int hue = ringsort.get_hue();
     if (!ejecting) {
 
-      if (prox >= 210 && ejectcounter < 3 &&
+      if (!onmatch &&prox >= 210 && ejectcounter < 3 &&
           ((team == 0 && hue >= 200 && hue <= 250) ||
            (team == 1 && hue >= 3 && hue <= 20))) {
         // console.println("Detect ring");
@@ -141,11 +145,7 @@ void flexWheelIntakeFunc() {
 
         chain.move(intakespd);
 
-        // if (rollerIntake == 0) {
-        //   rollers.move(intakespd);
-        // } else {
-        //   rollers.move(rollerIntake);
-        // }
+
 
         if (intakespd > 100 &&
             (armMotorCounter == 0 && armMotorCounterDouble == 0 &&
@@ -218,8 +218,18 @@ void initialize() {
 
     while (true) {
 
-      controller.print(0, 0, "%.2f %.2f %.2f", chassis.getPose().x,
-                       chassis.getPose().y, chassis.getPose().theta);
+
+      // controller.print(0,0 ,"%.1f",     chain.get_position()    );
+
+      // Detect motor burn our
+      if (chain.get_temperature() > 55) {
+        controller.print(0, 0, "Intake: %.0fC ", chain.get_temperature());
+      } else if (chain.get_temperature() > 55) {
+        controller.print(0, 0, "LB: %.0fC   ", armMotor.get_temperature());
+      } else {
+        // DEBUG
+        controller.print(0, 0, "%.1f %.1f %.0f  ", chassis.getPose().x, chassis.getPose().y, chassis.getPose().theta);
+      }
 
       if (!imu.is_installed()) {
         imudc = true;
@@ -271,20 +281,19 @@ void autonomous() {
 
     // chassis.turnToHeading(180, 10000);
 
-    // try {
-    //   if (selector.get_auton().value().name == "Red Ring Side" ||
-    //     selector.get_auton().value().name == "Red Mogo Rush" ||
-    //     selector.get_auton().value().name == "Solo AWP Red") {
-    //       team = 0;
-    //   } else {
-    //       team = 1;
-    //   }
-    // } catch (int e) {}
+    try {
+      if (selector.get_auton().value().name == "Red Ring Side" ||
+        selector.get_auton().value().name == "Red Mogo Rush" ||
+        selector.get_auton().value().name == "Solo AWP Red") {
+          team = 0;
+      } else {
+          team = 1;
+      }
+    } catch (int e) {}
 
     // Run auton
-    // mogoRushBlue();
-    ringRushBlue();
-    // selector.run_auton();
+    // ringRushBlue();
+    selector.run_auton();
 
 }
 
@@ -313,14 +322,34 @@ void rdsetup() {
 }
 
 // Driver code
+bool lb180 = false;
+
 void opcontrol() {
     // onmatch = true; // Disables the ring sort
 
+    // controller.rumble("-  -  -  .-");
   // testpid();
   // pros::delay(2000);
 
   // autonomous();
   // pros::delay(10000);
+  pros::Task driveTask([&]() {
+    while (true) {
+      int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+      int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);  
+      int l2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+      int r2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+
+      // Drive function (Lemlib)
+      chassis.arcade(leftY, rightX, false, 0.4);
+
+      // Activate intake
+      intake = r2 * 100 + l2 * -100;
+
+      pros::delay(10);
+    }
+
+  });
 
   try {
     teamLogo.focus();
@@ -328,14 +357,11 @@ void opcontrol() {
 
   while (true) {
     // Get Values of the controller
-    int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-    int rightX = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+   
     int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
     int r1 = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1);
-    int r2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
     int l1 = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1);
-    int l2 = controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
 
     int a = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A);
     int b = controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B);
@@ -408,6 +434,16 @@ void opcontrol() {
       allianceStakeCode();
     }
 
+    if (downArrow) {
+      lb180 = !lb180;
+      if (lb180) {
+          LBmoveToAngle(200);
+
+      } else {
+          LBmoveToAngle(0);
+      }
+    }
+
     // If disconnected, set the bot to be hold mode just in case
     if (controller.is_connected()) {
       if (usebrake) {
@@ -421,11 +457,7 @@ void opcontrol() {
         chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
     }
 
-    // Drive function (Lemlib)
-    chassis.arcade(leftY, rightX, false, 0.4);
-
-    // Activate intake
-    intake = r2 * 100 + l2 * -100;
+ 
 
     // Delay to save resources. This also makes sure that code runs properly
     // (e.g. 10 ticks = 100 milliseconds)

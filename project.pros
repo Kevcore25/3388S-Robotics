@@ -323,7 +323,7 @@
             }
         },
         "upload_options": {
-            "description": "Main competition program",
+            "description": "Main Competition Program",
             "icon": "X",
             "slot": 1
         },

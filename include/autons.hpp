@@ -109,10 +109,14 @@ inline void stop(){
 }
 
 inline void stopWhenRing() {
-    while (ringsort.get_proximity() >= 210 ) {
+    int i = 0;
+    while (ringsort.get_proximity() <= 210 && i < 5000) {
         pros::delay(1);
+        i++;
     }
-    intake = 5;
+    if (i < 5000) {
+        intake = 0;
+    }
 }
 
 inline void ringRushBlue() {
@@ -123,24 +127,23 @@ inline void ringRushBlue() {
     // Assuming odom works properly, all you need to do for tuning is just to change this value below
     // Fine tune by changing the code below
     chassis.setPose(32, 16, 21);
-    
+
     // Doinker activate to get the ring
     doinker.set_value(1);
 
     // Get middle ring
     intake = 100;
-    chassis.moveToPoint(47.5, 58, 2000);
+    chassis.moveToPoint(47, 58, 2000);
     chassis.waitUntilDone();
-    intake = 75;
     pros::delay(500);
     pros::Task bru(stopWhenRing);
-
+    intake = 40;
     // Move backwards
     chassis.moveToPoint(42, 30, 1000, {.forwards=false, .maxSpeed=75});
-    // move_forward(-25, 1000, true, {.maxSpeed=70});
     chassis.waitUntilDone();
 
     intake = 0;
+
     // Get mogo
     doinker.set_value(0);
     pros::delay(200);
@@ -152,91 +155,95 @@ inline void ringRushBlue() {
 
     // Score all 3 rings
     intake = 100;
-    chassis.moveToPose(52, 55, 80, 2700, {.lead=0.5, .minSpeed=80});
-
-    // pros::delay(100000);
-
-    // Go to corner
-    chassis.moveToPoint(70, 2, 2000, {.maxSpeed=70});
-    chassis.waitUntilDone();
-    move_forward(-12, 500);
-    chassis.moveToPoint(72, 0, 1000, {.maxSpeed=70});
-
+    chassis.turnToHeading(90, 500);
+    chassis.moveToPoint(58, 55, 3000, {.maxSpeed=80});
     // Get the middle ring in the field
-    chassis.turnToHeading(-75, 500);
-    chassis.moveToPose(16, 12, -90, 2000, {.minSpeed=80});
+    chassis.moveToPoint(42, 55, 1000, {.forwards=false, .maxSpeed=80});
+    chassis.waitUntilDone();
+    chassis.turnToHeading(205, 2000);
+    chassis.moveToPoint(24, 36, 1000, {.maxSpeed=80});
     armStagesOneRing();
+    chassis.moveToPoint(15, 24, 1000, {.maxSpeed=80});
+    pros::delay(1000);
+    intake=-10;
+    chassis.turnToHeading(211, 2000);
+    intake=0;
+    LBmoveToAngle(200, 50, 5, 1500);
+    pros::delay(250);
 
-    // Score alliance stake
-    turnTo(-180, -1);
-    move_forward(8, 750);
-
-    LBmoveToAngle(170, 60, 5, 1500);
-    pros::delay(250);        
     armMotorCounter = 0;
-
     intake = 0;
     pros::Task rstlbfunc(setLB0);
-    if (elim) {
-        // Go to left side of field
-        chassis.moveToPoint(-48, 24, 1000, {.minSpeed=80});
-    } else {
-        // Touch ladder
-        chassis.moveToPoint(14, 50,1000, {.minSpeed=80});
-    }
+
+
+
+    // // Score alliance stake
+    // turnTo(-180, -1);
+    // move_forward(10, 750);
+    // intake = -5;
+
+    // LBmoveToAngle(170, 60, 5, 1500);
+    // pros::delay(250);        
+    // if (elim) {
+    //     // Go to left side of field
+    //     chassis.moveToPoint(-48, 24, 1000, {.minSpeed=80});
+    // } else {
+    //     // Touch ladder
+    //     chassis.moveToPoint(4, 50,1000, {.minSpeed=80});
+    // }
 }
 
 inline void mogoRushBlue() {
     team = 1;
 
     // Main set pose. Tune this, then fine tune the other code
-    chassis.setPose(-54, 18, 0);
+    chassis.setPose(-64, 18, 15);
     doinker.set_value(1);
 
     // Rush for the mogo
-    chassis.moveToPoint(-50, 64, 2000, {.minSpeed=80});
+    chassis.moveToPoint(-53, 57, 2000);
     chassis.waitUntilDone();
 
     // Move it back
-    pros::delay(150);
-    chassis.moveToPoint(-50, 24, 2000, {.forwards=false});
+    chassis.moveToPoint(-58, 40, 2501000, {.forwards=false, .maxSpeed=60});
     chassis.waitUntilDone();
 
     // Get mogo
     doinker.set_value(0);
-    chassis.moveToPoint(-24, 48, 1500, {.forwards=false});
+    chassis.moveToPoint(-24, 46, 1500, {.forwards=false, .maxSpeed=60});
     chassis.waitUntilDone();
     mogo.set_value(1);
     pros::delay(200);
 
-    // Score ring. Due to the rush, ring needs to be tuned
+    // // Score ring. Due to the rush, ring needs to be tuned1
     intake = 100;
-    chassis.moveToPoint(-48, 48, 2000);
-    chassis.swingToPoint(-50, 30, DriveSide::LEFT, 1000);
+    chassis.moveToPoint(-67, 10, 2000);
+    chassis.waitUntilDone();
 
-    // Get the other mogo
+    auto mash([]() {
+        chassis.moveToPoint(-60, 20, 1000, {.forwards=false});
+        pros::delay(300);
+        chassis.moveToPoint(-67, 10, 500);
+    });
+
+    mash();
+    mash();
+    // mash();
+
+    chassis.turnToHeading(0, 500);
+    chassis.waitUntilDone();
     mogo.set_value(0);
-    chassis.moveToPoint(-50, 24, 1000, {.forwards=false});
+    chassis.turnToHeading(-180, 1000);
+
+
+    // Get the other mogo    
+    chassis.moveToPoint(-50, 50, 1000, {.forwards=false});
     chassis.waitUntilDone();
     mogo.set_value(1);
 
-    // Go to corner
-    chassis.moveToPoint(-70, 2, 2000);
-    chassis.waitUntilDone();
-    move_forward(-12, 500);
-    chassis.moveToPoint(-72, 0, 1000);
 
-    // Get the middle ring in the field
-    chassis.moveToPose(0, 24, -90, 2000);
-    if (!elim) {
-        // Drop mogo
-        chassis.turnToHeading(45, 750);
-        chassis.waitUntilDone();
-        mogo.set_value(0);
+    chassis.swingToPoint(-48, 52, DriveSide::LEFT, 1000);
 
-        // Touch ladder
-        chassis.moveToPoint(0, 50, 2000, {.minSpeed=70});
-    }
 }
 
 
@@ -286,6 +293,109 @@ inline void slowRightBlue() {
         chassis.moveToPoint(0, 50, 2000, {.minSpeed=80});
     }
 }
+
+
+
+inline void ringRushRed() {
+    team = 0;
+    chassis.setPose(0,0, 10);
+    pros::Task bru(stopWhenRing);
+    putDownLB();
+
+    // Get the ring in the center of the field
+    chassis.moveToPoint(12, 44.5,  2500);
+    doinker.set_value(1);
+    intake = 80;
+    chassis.waitUntilDone();
+    pros::delay(500);
+    intake = 0;
+
+    // Move backwards
+    chassis.moveToPoint(6, 18, 1000, {.forwards=false});
+
+    // undoinker 
+    chassis.waitUntilDone();
+    doinker.set_value(0);
+
+    // Get the mogo
+    chassis.moveToPoint(38, 28, 2000, {.forwards=false, .maxSpeed=75});
+    chassis.waitUntilDone();
+    mogo.set_value(1);
+    pros::delay(250);
+
+    // Get the rings in the field
+    intake = 100;
+    chassis.turnToHeading(-80, 500);
+    chassis.moveToPoint(5, 31.5, 2000, {.maxSpeed=80});
+    chassis.waitUntilDone();
+    pros::delay(1000);
+
+    // Get the ring    
+    chassis.turnToHeading(-180, 500);
+    chassis.moveToPoint(10.2, 0, 1000);
+    pros::delay(500);
+    armStagesOneRing();
+
+
+    // Alliance stake
+    chassis.moveToPose(53, -10.5, -231, 3000, {.lead=0.2, .minSpeed=80});
+    chassis.turnToHeading( -245,  1000);
+    chassis.waitUntilDone();
+    intake = -5;
+    LBmoveToAngle(200, 50);
+    pros::delay(500);
+    pros::Task rstlbfunc(setLB0);
+    move_forward(-10, 1000);
+
+    if (elim) {
+        chassis.moveToPoint(80, 18, 2000);
+    } else {
+        chassis.turnToHeading(40, 750);
+        chassis.moveToPoint(54, 20, 2000);
+    }
+}
+
+
+
+inline void mogoRushRed() {
+    team = 0;
+    chassis.setPose(0, 0, 15);
+
+
+    // Get mogo in the center of the field
+    doinker.set_value(1);
+    move_forward(42, 5000);
+    pros::delay(100);
+    move_forward(-30, 5000, false, {.maxSpeed=65});
+    // chassis.moveToPoint(36, -28, 200065
+
+    // Get the stationary mogo near the ladder mof the field so we can score at least one rin gin the autonomouse -eriod and not lpk 
+    chassis.turnToHeading(148, 750);
+    chassis.waitUntilDone();
+    move_forward(-12, 1000, false, {.maxSpeed=80});
+    mogo.set_value(1);
+    pros::delay(200);
+
+    // Swing to the point where the ring is stacked in the middle of the fioeld
+    intake = 100;
+    chassis.swingToPoint(12, 36, lemlib::DriveSide::LEFT, 2000);
+    chassis.waitUntilDone();
+    doinker.set_value(0);
+    chassis.turnToHeading(0, 500, {}, false);
+    move_forward(12, 1000);
+
+    // Get the mogo
+    pros::delay(750);
+    mogo.set_value(0);
+    
+    chassis.turnToHeading(180, 750);
+    chassis.waitUntilDone();
+    move_forward(-4, 1000);
+    mogo.set_value(1);
+
+
+}
+
 
 inline void leftRED() {
     team = 0;
